@@ -99,7 +99,7 @@ subprojects {
     checkstyle {
         maxWarnings = 0
         toolVersion = "9.1"
-        isShowViolations = true
+       isShowViolations = true
         isIgnoreFailures = false
     }
 

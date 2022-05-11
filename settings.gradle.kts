@@ -25,6 +25,7 @@
 
 rootProject.name = "OpenOSRS Plugins"
 
+include(":onetickboltenchant")
 //include(":betterantidrag")
 //include(":betterinterfacestyles")
 //include(":betterprofiles")
@@ -33,7 +34,7 @@ rootProject.name = "OpenOSRS Plugins"
 //include(":grounditemsextended")
 //include(":highalchemy")
 //include(":maxhit")
-//include(":playerindicatorsextended")
+include(":playerindicatorsextended")
 //include(":reminders")
 //include(":shayzieninfirmary")
 //include(":stealingartefacts")
