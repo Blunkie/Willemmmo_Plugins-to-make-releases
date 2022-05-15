@@ -25,6 +25,7 @@
 
 rootProject.name = "OpenOSRS Plugins"
 
+include(":WillemmmoApi")
 include(":onetickboltenchant")
 //include(":betterantidrag")
 //include(":betterinterfacestyles")
@@ -35,6 +36,7 @@ include(":onetickboltenchant")
 //include(":highalchemy")
 //include(":maxhit")
 include(":playerindicatorsextended")
+include(":pktools")
 //include(":reminders")
 //include(":shayzieninfirmary")
 //include(":stealingartefacts")

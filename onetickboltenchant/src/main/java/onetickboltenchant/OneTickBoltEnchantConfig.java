@@ -37,6 +37,18 @@ public interface OneTickBoltEnchantConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(keyName = "clienttick", name = "onCLientTick", description = "clienttick", position = 0, section = Title2)
+	default boolean clienttick()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "gametick", name = "onGameTick", description = "gametick", position = 0, section = Title2)
+	default boolean gametick()
+	{
+		return true;
+	}
 	/*
 	@ConfigItem(
 		keyName = "checkbolts",

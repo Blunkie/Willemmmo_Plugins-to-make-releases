@@ -1,7 +1,7 @@
-version = "1.0.0"
+version = "1.1.0"
 
-project.extra["PluginName"] = "One Tick Bolt Enchant"
-project.extra["PluginDescription"] = "Preform one Tick bolt enchanting"
+project.extra["PluginName"] = "PkTools"
+project.extra["PluginDescription"] = "Old PkingTools"
 
 tasks {
     jar {

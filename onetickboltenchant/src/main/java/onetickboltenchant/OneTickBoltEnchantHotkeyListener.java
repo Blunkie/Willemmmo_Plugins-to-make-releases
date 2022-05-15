@@ -84,6 +84,8 @@ public class OneTickBoltEnchantHotkeyListener extends MouseAdapter implements Ke
 			{
 				//addCommands("enchantbolt", plugin);
 				plugin.runboltenchanting = false;
+				plugin.r.keyRelease(KeyEvent.VK_SPACE);
+				plugin.pressspace = false;
 			}
 
 		}

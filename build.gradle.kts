@@ -1,3 +1,4 @@
+
 buildscript {
     repositories {
         gradlePluginPortal()
@@ -9,6 +10,7 @@ plugins {
     java
 }
 
+project.extra["GithubUrl"] = "https://github.com/Willemmmo/plugins"
 apply<BootstrapPlugin>()
 apply<VersionPlugin>()
 
@@ -99,7 +101,7 @@ subprojects {
     checkstyle {
         maxWarnings = 0
         toolVersion = "9.1"
-       isShowViolations = true
+        isShowViolations = true
         isIgnoreFailures = false
     }
 
@@ -124,6 +126,23 @@ subprojects {
     tasks {
         withType<JavaCompile> {
             options.encoding = "UTF-8"
+        }
+
+        withType<Jar> {
+            doLast {
+                copy {
+                    from("./build/libs/")
+                    into("../release/")
+                }
+            }
+        }
+        withType<Jar> {
+            doLast {
+                copy {
+                    from("./build/libs/")
+                    into(System.getProperty("user.home") + "/.openosrs/plugins")
+                }
+            }
         }
 
         withType<AbstractArchiveTask> {

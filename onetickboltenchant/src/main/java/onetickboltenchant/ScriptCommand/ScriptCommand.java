@@ -59,16 +59,16 @@ class EnchantBoltCommand implements ScriptCommand
 {
 	public void execute(Client client, OneTickBoltEnchantConfig config, OneTickBoltEnchantPlugin plugin, ConfigManager configManager)
 	{
-		if (config.forcemagetab())
-		{
-			WidgetHook widgetHook = new WidgetHook();
-			boolean checkForOpen = widgetHook.isTabOpen(client, widgetHook.MageTab(client));
-			if (checkForOpen)
-			{
-				System.out.println("Forcing to open tab");
-				OpenTab(widgetHook.MageTab(client), client, plugin);
-			}
-		}
+		//if (config.forcemagetab())
+		//{
+		//	WidgetHook widgetHook = new WidgetHook();
+		//	boolean checkForOpen = widgetHook.isTabOpen(client, widgetHook.MageTab(client));
+		//	if (checkForOpen)
+		//	{
+		//		System.out.println("Forcing to open tab");
+		//		OpenTab(widgetHook.MageTab(client), client, plugin);
+		//	}
+		//}
 		try
 		{
 			castSpell(WidgetInfo.SPELL_ENCHANT_CROSSBOW_BOLT, client, plugin);
