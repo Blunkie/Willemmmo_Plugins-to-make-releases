@@ -15,15 +15,19 @@ apply<BootstrapPlugin>()
 apply<VersionPlugin>()
 
 allprojects {
-    group = "com.openosrs"
+    group = "com.openosrs.externals"
     version = ProjectVersions.openosrsVersion
     apply<MavenPublishPlugin>()
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
 }
 
 subprojects {
     group = "com.openosrs.externals"
 
-    project.extra["PluginProvider"] = "OpenOSRS"
+    project.extra["PluginProvider"] = "Willemmmo"
     project.extra["ProjectUrl"] = "https://discord.gg/OpenOSRS"
     project.extra["PluginLicense"] = "3-Clause BSD License"
 

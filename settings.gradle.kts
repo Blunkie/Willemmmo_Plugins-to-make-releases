@@ -23,24 +23,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-rootProject.name = "OpenOSRS Plugins"
+rootProject.name = "Willemmmo_Plugins"
 
-include(":WillemmmoApi")
+include(":willemmmoapi")
 include(":onetickboltenchant")
-//include(":betterantidrag")
-//include(":betterinterfacestyles")
-//include(":betterprofiles")
-//include(":betterroguesden")
-//include(":friendtagging")
-//include(":grounditemsextended")
-//include(":highalchemy")
-//include(":maxhit")
 include(":playerindicatorsextended")
 include(":pktools")
-//include(":reminders")
-//include(":shayzieninfirmary")
-//include(":stealingartefacts")
-//include(":thieving")
 
 for (project in rootProject.children) {
     project.apply {
