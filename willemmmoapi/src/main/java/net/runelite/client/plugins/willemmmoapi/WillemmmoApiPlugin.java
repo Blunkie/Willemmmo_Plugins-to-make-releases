@@ -2,6 +2,8 @@ package net.runelite.client.plugins.willemmmoapi;
 
 import com.google.inject.Provides;
 import java.awt.Rectangle;
+import java.util.HashSet;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
@@ -9,12 +11,20 @@ import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
+import net.runelite.api.NPC;
 import net.runelite.api.Point;
 import net.runelite.api.Prayer;
+import net.runelite.api.TileObject;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.GameObjectDespawned;
+import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.NpcChanged;
+import net.runelite.api.events.NpcDespawned;
+import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -52,6 +62,9 @@ public class WillemmmoApiPlugin extends Plugin
 	@Inject
 	private PrayerApi prayerApi;
 
+	public final static Set<TileObject> OBJECT_SET = new HashSet<>();
+	public final static Set<NPC> NPC_SET = new HashSet<>();
+
 	@Provides
 	WillemmmoApiConfig provideConfig(ConfigManager configManager)
 	{
@@ -86,11 +99,47 @@ public class WillemmmoApiPlugin extends Plugin
 		{
 			return;
 		}
-		//if (client.getVarbitValue(Prayer.PROTECT_ITEM.getVarbit()) == 0)
-		//{
-			//log.info("Enabling Prayer. Value now = " + Prayer.PROTECT_ITEM.getVarbit());
-			//prayerApi.ActivatePrayer(Prayer.PROTECT_ITEM, 0);
-		//}
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		if (gameStateChanged.getGameState() != GameState.LOGGED_IN && gameStateChanged.getGameState() != GameState.CONNECTION_LOST)
+		{
+			OBJECT_SET.clear();
+			NPC_SET.clear();
+		}
+	}
+
+	@Subscribe
+	public void onGameObjectSpawned(GameObjectSpawned event)
+	{
+		OBJECT_SET.add(event.getGameObject());
+	}
+
+	@Subscribe
+	public void onGameObjectDespawned(GameObjectDespawned event)
+	{
+		OBJECT_SET.remove(event.getGameObject());
+	}
+
+	@Subscribe
+	public void npcSpawned(NpcSpawned event)
+	{
+		NPC_SET.add(event.getNpc());
+	}
+
+	@Subscribe
+	public void npcDespawned(NpcDespawned event)
+	{
+		NPC_SET.remove(event.getNpc());
+	}
+
+	@Subscribe
+	public void npcChanged(NpcChanged event)
+	{
+		NPC_SET.remove(event.getNpc());
+		NPC_SET.add(event.getNpc());
 	}
 
 	@Subscribe
