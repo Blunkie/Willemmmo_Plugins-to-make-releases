@@ -32,7 +32,7 @@ public class ObjectApi
 	}
 
 	@Nullable
-	public GameObject findNearestGameObjectMenuWithinn(WorldPoint worldPoint, int dist, String menuAction)
+	public GameObject findNearestGameObjectMenuWithin(WorldPoint worldPoint, int dist, String menuAction)
 	{
 		assert client.isClientThread();
 		if (client.getLocalPlayer() == null)
@@ -42,6 +42,20 @@ public class ObjectApi
 		return new GameObjectQuery()
 			.isWithinDistance(worldPoint, dist)
 			.filter(w -> ArrayUtils.contains(client.getObjectDefinition(w.getId()).getActions(), menuAction))
+			.result(client)
+			.nearestTo(client.getLocalPlayer());
+	}
+
+	@Nullable
+	public GameObject findNearestGameObjectName(WorldPoint worldPoint, int distance, String name)
+	{
+		assert client.isClientThread();
+		if (client.getLocalPlayer() == null)
+		{
+			return null;
+		}
+		return new GameObjectQuery()
+			.nameEquals(name)
 			.result(client)
 			.nearestTo(client.getLocalPlayer());
 	}

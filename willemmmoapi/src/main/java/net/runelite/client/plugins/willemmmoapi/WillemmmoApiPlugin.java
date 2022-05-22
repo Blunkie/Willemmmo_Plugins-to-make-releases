@@ -8,7 +8,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
@@ -38,6 +40,7 @@ import net.runelite.client.plugins.willemmmoapi.tasks.MouseSupport;
 import org.pf4j.Extension;
 
 @Extension
+@Slf4j
 @PluginDescriptor(
 	name = "Willemmmo_Api",
 	description = "Willemmmo_Api settings",
@@ -61,6 +64,8 @@ public class WillemmmoApiPlugin extends Plugin
 	private ActionQue action;
 	@Inject
 	private PrayerApi prayerApi;
+
+	public int cooldown = 0;
 
 	public final static Set<TileObject> OBJECT_SET = new HashSet<>();
 	public final static Set<NPC> NPC_SET = new HashSet<>();
@@ -89,7 +94,10 @@ public class WillemmmoApiPlugin extends Plugin
 		{
 			return;
 		}
-		action.onClientTick(event);
+		if (cooldown == 0)
+		{
+			action.onClientTick(event);
+		}
 	}
 
 	@Subscribe
@@ -98,6 +106,10 @@ public class WillemmmoApiPlugin extends Plugin
 		if (client.getGameState() != GameState.LOGGED_IN)
 		{
 			return;
+		}
+		if (cooldown > 0)
+		{
+			cooldown--;
 		}
 	}
 
@@ -181,8 +193,6 @@ public class WillemmmoApiPlugin extends Plugin
 		menuOptionClicked.setMenuAction(menuAction);
 		menuOptionClicked.setParam0(param0);
 		menuOptionClicked.setParam1(param1);
-//        menuOptionClicked.setActionParam(param0);
-//        menuOptionClicked.setWidgetId(param1);
 	}
 
 	public void doActionClientTick(CreateMenuEntry entry, Rectangle rect, long delay)
@@ -198,6 +208,34 @@ public class WillemmmoApiPlugin extends Plugin
 			mouseSupport.handleMouseClick(point);
 		};
 		action.delayClientTicks(delay, runnable);
+	}
+
+	public void doActionMsTime(CreateMenuEntry entry, Rectangle rect, long delay)
+	{
+		Point point = mouseSupport.getClickPoint(rect);
+		doActionMsTime(entry, point, delay);
+	}
+
+	public void doActionMsTime(CreateMenuEntry entry, Point point, long delay)
+	{
+		Runnable runnable = () -> {
+			menuSupport.createEntry(entry);
+			mouseSupport.handleMouseClick(point);
+		};
+		action.delayTime(delay, runnable);
+	}
+
+	public void doGameObjectAction(GameObject object, int menuOpcodeID, long delay)
+	{
+		if (object == null || object.getConvexHull() == null)
+		{
+			return;
+		}
+		log.info("Making Menu Entry");
+		Rectangle rectangle = (object.getConvexHull().getBounds() != null) ? object.getConvexHull().getBounds() :
+			new Rectangle(client.getCenterX() - 50, client.getCenterY() - 50, 100, 100);
+		CreateMenuEntry entry = new CreateMenuEntry("", object.getName(), object.getId(), menuOpcodeID, object.getSceneMinLocation().getX(), object.getSceneMinLocation().getY(), true);
+		doActionMsTime(entry, rectangle, delay);
 	}
 
 	public void ActivatePrayer(Prayer prayer)

@@ -51,6 +51,12 @@ public class ActionQue
 		runLater(() -> clientTick >= when, runnable);
 	}
 
+	public void delayTime(long delay, Runnable runnable)
+	{
+		long when = System.currentTimeMillis() + delay;
+		runLater(() -> System.currentTimeMillis() >= when, runnable);
+	}
+
 	public void runLater(Supplier<Boolean> condition, Runnable runnable)
 	{
 		clientThread.invoke(() -> {
