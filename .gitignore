@@ -30,3 +30,4 @@ archive
 /gradle/*
 /pktools/*
 thieving
+/pktools/
