@@ -11,12 +11,14 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.Point;
@@ -39,7 +41,6 @@ import net.runelite.client.plugins.pktools.ScriptCommandPkTools.ScriptCommandPkT
 import net.runelite.client.plugins.willemmmoapi.WillemmmoApiPlugin;
 import net.runelite.client.plugins.willemmmoapi.prayer.PrayerApi;
 import net.runelite.client.ui.overlay.OverlayManager;
-import org.jetbrains.annotations.Nullable;
 import org.pf4j.Extension;
 
 @Extension
@@ -442,6 +443,27 @@ public class PkToolsPlugin extends Plugin
 		@Nullable
 		@Override
 		public Widget getWidget()
+		{
+			return null;
+		}
+
+		@Nullable
+		@Override
+		public NPC getNpc()
+		{
+			return null;
+		}
+
+		@Nullable
+		@Override
+		public Player getPlayer()
+		{
+			return null;
+		}
+
+		@Nullable
+		@Override
+		public Actor getActor()
 		{
 			return null;
 		}

@@ -38,6 +38,7 @@ object Libraries {
         const val pf4j = "3.6.0"
         const val findbugs = "3.0.2"
         const val rxjava = "3.0.10"
+        const val javax = "1.3.2"
     }
 
     const val apacheCommonsText = "org.apache.commons:commons-text:${Versions.apacheCommonsText}"
@@ -48,5 +49,5 @@ object Libraries {
     const val pf4j = "org.pf4j:pf4j:${Versions.pf4j}"
     const val findbugs = "com.google.code.findbugs:jsr305:${Versions.findbugs}"
     const val rxjava = "io.reactivex.rxjava3:rxjava:${Versions.rxjava}"
-
+    const val javax = "javax.annotation:javax.annotation-api:${Versions.javax}"
 }

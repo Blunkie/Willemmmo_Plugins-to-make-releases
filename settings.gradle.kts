@@ -27,8 +27,6 @@ rootProject.name = "Willemmmo_Plugins"
 
 include(":willemmmoapi")
 include(":onetickboltenchant")
-include(":playerindicatorsextended")
-include(":pktools")
 include(":corpspec")
 include(":scorpiaassist")
 
@@ -41,5 +39,3 @@ for (project in rootProject.children) {
         require(buildFile.isFile) { "Project '${project.path} must have a $buildFile build script" }
     }
 }
-include("corpspec")
-include("scorpiaassist")
