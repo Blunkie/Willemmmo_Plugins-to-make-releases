@@ -7,11 +7,12 @@ import java.util.concurrent.ExecutorService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.plugins.willemmmoapi.MouseType;
-import net.runelite.client.plugins.willemmmoapi.WillemmmoApiConfig;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.plugins.willemmmoapi.MouseType;
+import net.runelite.client.plugins.willemmmoapi.WillemmmoApiConfig;
+import static net.runelite.client.plugins.willemmmoapi.WillemmmoApiPlugin.sleep;
 
 @Slf4j
 @Singleton
@@ -174,6 +175,28 @@ public class MouseSupport
 		final int y = (int) (rect.getY() + calculations.getRandomIntBetweenRange((int) rect.getHeight() / 6 * -1, (int) rect.getHeight() / 6) + rect.getHeight() / 2);
 
 		return new Point(x, y);
+	}
+
+	public void delayMouseClick(Point point, long delay)
+	{
+		executorService.submit(() ->
+		{
+			try
+			{
+				sleep(delay);
+				handleMouseClick(point);
+			}
+			catch (RuntimeException e)
+			{
+				e.printStackTrace();
+			}
+		});
+	}
+
+	public void delayMouseClick(Rectangle rectangle, long delay)
+	{
+		Point point = getClickPoint(rectangle);
+		delayMouseClick(point, delay);
 	}
 
 }

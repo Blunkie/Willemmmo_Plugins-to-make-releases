@@ -28,7 +28,7 @@ subprojects {
     group = "com.openosrs.externals"
 
     project.extra["PluginProvider"] = "Willemmmo"
-    project.extra["ProjectUrl"] = "https://discord.gg/OpenOSRS"
+    project.extra["ProjectUrl"] = ""
     project.extra["PluginLicense"] = "3-Clause BSD License"
 
     repositories {
@@ -36,19 +36,6 @@ subprojects {
             content {
                 excludeGroupByRegex("com\\.openosrs.*")
                 excludeGroupByRegex("com\\.runelite.*")
-            }
-        }
-
-        exclusiveContent {
-            forRepository {
-                maven {
-                    url = uri("https://repo.runelite.net")
-                }
-            }
-            filter {
-                includeModule("net.runelite", "discord")
-                includeModule("net.runelite.jogl", "jogl-all")
-                includeModule("net.runelite.gluegen", "gluegen-rt")
             }
         }
 
@@ -169,4 +156,7 @@ subprojects {
             from(configurations["runtimeClasspath"])
         }
     }
+}
+repositories {
+    mavenCentral()
 }

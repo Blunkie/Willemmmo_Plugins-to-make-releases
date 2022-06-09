@@ -30,6 +30,7 @@ include(":onetickboltenchant")
 include(":playerindicatorsextended")
 include(":pktools")
 include(":corpspec")
+include(":scorpiaassist")
 
 for (project in rootProject.children) {
     project.apply {
@@ -41,3 +42,4 @@ for (project in rootProject.children) {
     }
 }
 include("corpspec")
+include("scorpiaassist")

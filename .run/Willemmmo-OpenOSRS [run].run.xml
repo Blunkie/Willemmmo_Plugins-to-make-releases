@@ -1,0 +1,28 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Willemmmo-OpenOSRS [run]" type="GradleRunConfiguration" factoryName="Gradle">
+    <ExternalSystemSettings>
+      <option name="env">
+        <map>
+          <entry key="PLUGIN_DEVELOPMENT_PATH" value="../Willemmmo_Plugins;../illu-plugins;../OpenOSRS-external-plugins" />
+        </map>
+      </option>
+      <option name="executionName" />
+      <option name="externalProjectPath" value="$PROJECT_DIR$/../Willemmmo-OpenOSRS" />
+      <option name="externalSystemIdString" value="GRADLE" />
+      <option name="scriptParameters" value="-x test -x checkstyleMain" />
+      <option name="taskDescriptions">
+        <list />
+      </option>
+      <option name="taskNames">
+        <list>
+          <option value="run" />
+        </list>
+      </option>
+      <option name="vmOptions" />
+    </ExternalSystemSettings>
+    <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+    <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+    <DebugAllEnabled>false</DebugAllEnabled>
+    <method v="2" />
+  </configuration>
+</component>

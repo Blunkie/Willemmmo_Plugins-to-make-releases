@@ -225,6 +225,26 @@ public class WillemmmoApiPlugin extends Plugin
 		action.delayTime(delay, runnable);
 	}
 
+	public static void sleep(long toSleep)
+	{
+		try
+		{
+			long start = System.currentTimeMillis();
+			Thread.sleep(toSleep);
+
+			// Guarantee minimum sleep
+			long now;
+			while (start + toSleep > (now = System.currentTimeMillis()))
+			{
+				Thread.sleep(start + toSleep - now);
+			}
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	public void doGameObjectAction(GameObject object, int menuOpcodeID, long delay)
 	{
 		if (object == null || object.getConvexHull() == null)
@@ -241,5 +261,12 @@ public class WillemmmoApiPlugin extends Plugin
 	public void ActivatePrayer(Prayer prayer)
 	{
 		prayerApi.ActivatePrayer(prayer, 0);
+	}
+
+	public void oneClickCastSpell(WidgetInfo spellWidget, CreateMenuEntry menuEntry, Rectangle rectangle, long delay)
+	{
+		menuSupport.setEntry(menuEntry, false);
+		menuSupport.setSelectedSpell(spellWidget);
+		mouseSupport.delayMouseClick(rectangle, delay);
 	}
 }
