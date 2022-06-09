@@ -24,3 +24,8 @@ hs_err*
 replay_pid*
 archive
 /.run/
+/.github/
+/.run/
+/build/
+/config/
+/gradle/
