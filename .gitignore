@@ -25,7 +25,8 @@ replay_pid*
 archive
 /.run/
 /.github/
-/.run/
-/build/
+/.run/*
 /config/
-/gradle/
+/gradle/*
+/pktools/*
+thieving
