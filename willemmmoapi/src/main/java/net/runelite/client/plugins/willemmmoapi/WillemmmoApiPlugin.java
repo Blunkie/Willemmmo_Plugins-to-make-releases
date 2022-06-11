@@ -174,7 +174,6 @@ public class WillemmmoApiPlugin extends Plugin
 	{
 		if (event.getMenuAction() == MenuAction.CC_OP && event.getId() == WidgetInfo.WORLD_SWITCHER_LIST.getId())
 		{
-			menuSupport.entry = null;
 			return;
 		}
 		else
@@ -182,7 +181,6 @@ public class WillemmmoApiPlugin extends Plugin
 			menuAction(event, menuSupport.entry.getOption(), menuSupport.entry.getTarget(), menuSupport.entry.getIdentifier(), MenuAction.of(menuSupport.entry.getOpcode()), menuSupport.entry.getParam0(), menuSupport.entry.getParam1());
 
 		}
-		menuSupport.entry = null;
 	}
 
 	public void menuAction(MenuOptionClicked menuOptionClicked, String option, String target, int identifier, MenuAction menuAction, int param0, int param1)

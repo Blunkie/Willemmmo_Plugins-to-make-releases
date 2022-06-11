@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +17,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
+import net.runelite.api.NpcID;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.coords.LocalPoint;
@@ -35,14 +35,16 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.iutils.CalculationUtils;
 import net.runelite.client.plugins.iutils.LegacyMenuEntry;
+import net.runelite.client.plugins.iutils.NPCUtils;
 import net.runelite.client.plugins.iutils.WalkUtils;
 import net.runelite.client.plugins.iutils.game.Game;
 import net.runelite.client.plugins.iutils.iUtils;
 import net.runelite.client.plugins.iutils.scripts.ReflectBreakHandler;
 import net.runelite.client.plugins.iutils.scripts.iScript;
 import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.ERROR;
-import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.FREEZE_INTERACTING;
+import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.FREEZE_SCORPIA;
 import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.HANDLE_BREAK;
 import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.KILL_MINION;
 import static net.runelite.client.plugins.scorpiaassist.ScorpiaAssistStates.KILL_SCORPIA;
@@ -73,22 +75,30 @@ public class ScorpiaAssistPlugin extends iScript
 	private Game game;
 
 	@Inject
+	private NPCUtils npcUtils;
+
+	@Inject
 	private WalkUtils walk;
+
+	@Inject
+	private CalculationUtils calc;
 	@Inject
 	private ReflectBreakHandler breakHandler;
 	//declaration of variable's used within the script
 	private List<String> safeNames;
 	private List<Integer> scorpiaRegion;
 	private WorldArea scorpiaArea;
-	private WorldPoint swLocation = new WorldPoint(3220, 10332, 0);
-	private WorldPoint neLocation = new WorldPoint(3246, 10451, 0);
+	private WorldPoint swLocation = new WorldPoint(3219, 10331, 0);
+	private WorldPoint neLocation = new WorldPoint(3247, 10352, 0);
+	private WorldPoint seLocation = new WorldPoint(3247, 10331, 0);
+	private WorldPoint nwLocation = new WorldPoint(3219, 10352, 0);
 	private NPC Scorpia;
 	private Set<NPC> Targets = new HashSet<>();
 	private int timeout;//variable to handle delays of the script
+	private long sleepLength;
 	private boolean startPlugin = false;
 	private boolean hasDied;
 	private boolean ReceivedPet;
-	private boolean isMinion;
 
 	@Override
 	protected void onStart()
@@ -105,7 +115,6 @@ public class ScorpiaAssistPlugin extends iScript
 		timeout = 0;
 		hasDied = false;
 		startPlugin = false;
-		isMinion = false;
 		Targets.clear();
 	}
 
@@ -116,12 +125,6 @@ public class ScorpiaAssistPlugin extends iScript
 		safeNames = new ArrayList<>();
 		scorpiaRegion = Arrays.asList(12704, 12705, 12706, 12960, 12961, 12962, 13216, 13217, 13218);
 		scorpiaArea = new WorldArea(swLocation, neLocation);
-		isMinion = isMinionAlive();
-		//scorpia Area:
-		//NW World: 3220, 10351 local: 4672,7104
-		//SW World: 3220, 10332 local: 4672,4672 //local == variable
-		//NE World: 3246,10351 local: 6976,7104
-		//SE World: 3246,10322 local: 6976,4672
 	}
 
 	@Provides
@@ -167,16 +170,21 @@ public class ScorpiaAssistPlugin extends iScript
 				stop();
 				break;
 		}
+		if (timeout > 0)
+		{
+			switch (getState())
+			{
+				case WALK_SAFE:
+					timeout = 0;
+			}
+			timeout--;
+			return;
+		}
 		if (isAtScorpia())
 		{
-			isMinion = isMinionAlive();
 			int magiclevel = client.getBoostedSkillLevel(Skill.MAGIC);
 			int scorp_x = 0;
 			int scorp_y = 0;
-			//NW World: 3220, 10351 local: 4672,7104
-			//SW World: 3220, 10332 local: 4672,4672 //local == variable
-			//NE World: 3246,10351 local: 6976,7104
-			//SE World: 3246,10322 local: 6976,4672
 			if (isScorpiaAlive() && Scorpia != null)
 			{
 				scorp_x = Scorpia.getWorldLocation().getX();
@@ -184,47 +192,81 @@ public class ScorpiaAssistPlugin extends iScript
 			}
 			switch (getState())
 			{
-				case FREEZE_INTERACTING:
-					FreezeInteractingFunc();
-					break;
 				case WALK_SAFE:
-					WorldPoint toWalkSafety = null;
-					int middle_x = (neLocation.getX() + swLocation.getX()) / 2;
-					int middle_y = (neLocation.getY() + swLocation.getY()) / 2;
-					if (scorp_x <= middle_x)
+					if (!player.isMoving() && isInDangerZone(Scorpia))
 					{
-						if (scorp_y <= middle_y)//scorpia = in the southwest
+						int middle_x = (neLocation.getX() + swLocation.getX()) / 2;
+						int middle_y = (neLocation.getY() + swLocation.getY()) / 2;
+						if (scorp_x <= middle_x)
 						{
-							toWalkSafety = new WorldPoint(swLocation.getX(), neLocation.getY(), player.getWorldLocation().getPlane());
+							if (scorp_y <= middle_y && !player.isMoving())//scorpia = in the southwest
+							{
+								log.info("Setting Waypoint to : NORTHWEST");
+								walk.sceneWalk(nwLocation, 0, 0);
+								break;
+							}
+							if (scorp_y > middle_y && !player.isMoving())//scorpia = in the northwest
+							{
+								log.info("Setting Waypoint to : NORTHEAST");
+								walk.sceneWalk(neLocation, 0, 0);
+								break;
+							}
 						}
-						if (scorp_y > middle_y)//scorpia = in the northwest
+						if (scorp_x > middle_x)
 						{
-							toWalkSafety = neLocation;
+							if (scorp_y <= middle_y && !player.isMoving())//scorpia = in the southeast
+							{
+								log.info("Setting Waypoint to : SOUTHWEST");
+								walk.sceneWalk(swLocation, 0, 0);
+								break;
+							}
+							if (scorp_y > middle_y && !player.isMoving())//scorpia = in the northeast
+							{
+								log.info("Setting Waypoint to : SOUTHEAST");
+								walk.sceneWalk(seLocation, 0, 0);
+								break;
+							}
 						}
 					}
-					if (scorp_x > middle_x)
+				case FREEZE_SCORPIA:
+					if (!isInDangerZone(Scorpia))
 					{
-						if (scorp_y <= middle_y)//scorpia = in the southeast
-						{
-							toWalkSafety = swLocation;
-						}
-						if (scorp_y > middle_y)//scorpia = in the northeast
-						{
-							toWalkSafety = new WorldPoint(neLocation.getX(), swLocation.getY(), player.getWorldLocation().getPlane());//walk to southeast
-						}
+						useSpell(Scorpia, FreezeSpellInfo(magiclevel));
 					}
-					if (toWalkSafety != null)
+					timeout += 4;
+					break;
+				case KILL_MINION:
+					NPC minion = npcUtils.findNearestNpc(NpcID.SCORPIAS_GUARDIAN);
+					//TODO add function to use trident
+					//TODO add function to choose spell or trident
+					if (player.getAnimation() == 7856)
 					{
-						walk.sceneWalk(toWalkSafety, 0, 0);
+						timeout += 3;
+						break;
 					}
+					if (!isInDangerZone(Scorpia))
+					{
+						useSpell(minion, KillSpellInfo(magiclevel));
+
+					}
+					timeout += 4;
+					break;
+				case KILL_SCORPIA:
+					if (player.getAnimation() == 7856)
+					{
+						timeout += 3;
+						break;
+					}
+					if (!isInDangerZone(Scorpia))
+					{
+						useSpell(Scorpia, KillSpellInfo(magiclevel));
+					}
+					timeout += 4;
+					break;
+				case TIMEOUT:
+					break;
 			}
 		}
-		if (!isAtScorpia())
-		{
-			isMinion = false;
-
-		}
-
 	}
 
 	@Subscribe
@@ -325,7 +367,7 @@ public class ScorpiaAssistPlugin extends iScript
 			return;
 		}
 		if (spawnedNpc.getName().equalsIgnoreCase("Scorpia") ||
-			spawnedNpc.getName().equalsIgnoreCase("Scorpia's offspring"))
+			spawnedNpc.getName().equalsIgnoreCase("Scorpia's guardian"))
 		{
 			Targets.add(spawnedNpc);
 		}
@@ -339,9 +381,9 @@ public class ScorpiaAssistPlugin extends iScript
 		}
 		NPC deSpawnedNpc = event.getNpc();
 		if (deSpawnedNpc.getName().equalsIgnoreCase("Scorpia") ||
-			deSpawnedNpc.getName().equalsIgnoreCase("Scorpia's offspring"))
+			deSpawnedNpc.getName().equalsIgnoreCase("Scorpia's guardian") && event.getNpc().isDead())
 		{
-			Targets.remove(deSpawnedNpc);
+			Targets.remove(event.getNpc());
 		}
 	}
 
@@ -349,45 +391,56 @@ public class ScorpiaAssistPlugin extends iScript
 	{
 		return scorpiaArea.contains(client.getLocalPlayer().getWorldLocation());
 	}
-
 	private boolean isMinionAlive()
 	{
-		for (NPC npclist : Targets)
+		NPC minionHere = npcUtils.findNearestNpc(NpcID.SCORPIAS_GUARDIAN);
+		return minionHere != null;
+		/*for (NPC npclist : Targets)
 		{
-			if (npclist.getName().equalsIgnoreCase("Scorpia's offspring"))
+			if (npclist.getName().equalsIgnoreCase("Scorpia's guardian"))
 			{
 				return true;
 			}
 		}
-		return false;
+		return
+			false;*/
 	}
-
 	private boolean isScorpiaAlive()
 	{
-		for (NPC npclist : Targets)
+		NPC scorpiaHere = npcUtils.findNearestNpc(NpcID.SCORPIA);
+		return scorpiaHere != null;
+		/*if (Targets.isEmpty())
 		{
-			if (npclist.getName().equalsIgnoreCase("Scorpia"))
+			return false;
+		}
+		if (!Targets.isEmpty())
+		{
+			for (NPC npclist : Targets)
 			{
-				return true;
+				if (npclist.getName().equalsIgnoreCase("Scorpia"))
+				{
+					return true;
+				}
+				return false;
 			}
 		}
-		return false;
+		return false;*/
 	}
-
 	private NPC Scorpia_NPC()
 	{
-		NPC ret = null;
-
-		for (NPC npc : Targets)
+		return npcUtils.findNearestNpc(NpcID.SCORPIA);
+		/*if (!Targets.isEmpty())
 		{
-			if (npc.getName().equalsIgnoreCase("Scorpia"))
+			for (NPC npc : Targets)
 			{
-				ret = npc;
+				if (npc.getName().equalsIgnoreCase("Scorpia") && npc != null)
+				{
+					return npc;
+				}
 			}
 		}
-		return Objects.requireNonNull(ret);
+		return null;*/
 	}
-
 	private void logoutFunction()
 	{
 		if (game.widget(182, 8) != null)
@@ -400,29 +453,21 @@ public class ScorpiaAssistPlugin extends iScript
 		}
 	}
 
-	private void FreezeInteractingFunc()
+	private void useSpell(NPC killnpc, WidgetInfo widgetInfo)
 	{
-		Player player = client.getLocalPlayer();
-		//Actor withwho = player.getInteracting();
-		NPC withwho = (NPC) player.getInteracting();
-		if (withwho == null)
+		if (widgetInfo == null)
 		{
-			return;
+			game.sendGameMessage("fatal error: cannot cast spell");
 		}
-		WidgetInfo FreezeSpell = SpellInfo(client.getBoostedSkillLevel(Skill.MAGIC));
-		if (withwho.isMoving())
+		if (killnpc != null)
 		{
-			if (FreezeSpell == null)
-			{
-				game.sendGameMessage("Spell didnt load");
-				return;
-			}
-			LegacyMenuEntry entry = new LegacyMenuEntry("", "", withwho.getIndex(), MenuAction.WIDGET_TARGET_ON_NPC.getId(), 0, 0, false);//<<------ withwho.getIndex() doesnt exist
-			utils.oneClickCastSpell(FreezeSpell, entry, withwho.getConvexHull().getBounds(), 10);
+			LegacyMenuEntry entry = new LegacyMenuEntry("", "", killnpc.getIndex(), MenuAction.WIDGET_TARGET_ON_NPC.getId(), 0, 0, false);
+			utils.oneClickCastSpell(widgetInfo, entry, killnpc.getConvexHull().getBounds(), sleepDelay());
 		}
+		return;
 	}
 
-	private WidgetInfo SpellInfo(int magiclevel)
+	private WidgetInfo FreezeSpellInfo(int magiclevel)
 	{
 		WidgetInfo magespell = null;
 		if (magiclevel >= 79)
@@ -440,6 +485,16 @@ public class ScorpiaAssistPlugin extends iScript
 		return magespell;
 	}
 
+	private WidgetInfo KillSpellInfo(int magiclevel)
+	{
+		WidgetInfo magicspel = null;
+		if (magiclevel >= 81)
+		{
+			magicspel = WidgetInfo.SPELL_WIND_SURGE;
+		}
+		return magicspel;
+	}
+
 	private ScorpiaAssistStates getState()
 	{
 		Player player = client.getLocalPlayer();
@@ -449,58 +504,66 @@ public class ScorpiaAssistPlugin extends iScript
 		}
 		if (isAtScorpia() && isScorpiaAlive())
 		{
-			Scorpia = Scorpia_NPC();
+			if (!Targets.isEmpty())
+			{
+				Scorpia = Scorpia_NPC();
+			}
 			if (Scorpia == null)
 			{
 				return ERROR;
 			}
-		}
-		if (isAtScorpia())
-		{
-			if (Scorpia != null)
+			if (isInDangerZone(Scorpia))
 			{
-				WorldPoint scorpiaLocation = Scorpia.getWorldLocation();
-				if (scorpiaLocation.distanceTo(player.getWorldLocation()) < 4)
-				{
-					return WALK_SAFE;
-				}
+				return WALK_SAFE;
 			}
-			if (player.getInteracting() == null)//player is not interacting
+			if (Scorpia.isMoving() && !isInDangerZone(Scorpia))
 			{
-				if (isMinionAlive())
-				{
-					return KILL_MINION;
-				}
-				if (!isMinionAlive() && isScorpiaAlive())
-				{
-					return KILL_SCORPIA;
-				}
+				return FREEZE_SCORPIA;
 			}
-			if (player.getInteracting() != null)//player is interacting
+			if (isMinionAlive() && !isInDangerZone(Scorpia))
 			{
-				Actor withWho = player.getInteracting();
-				if (withWho.isMoving())
-				{
-					return FREEZE_INTERACTING;
-				}
-				if (!withWho.isMoving())
-				{
-					if (isMinionAlive() && withWho.getName().equalsIgnoreCase("Scorpia"))
-					{
-						return KILL_MINION;
-					}
-					if (!isMinionAlive() && withWho.getName().equalsIgnoreCase("Scorpia") && isScorpiaAlive())
-					{
-						return KILL_SCORPIA;
-					}
-				}
+				return KILL_MINION;
 			}
-			//eating function
-			//poison functon
-			//restore function
-
+			if (!isMinionAlive() && !Scorpia.isMoving() && !player.isMoving() && !isInDangerZone(Scorpia))
+			{
+				return KILL_SCORPIA;
+			}
 		}
 		return TIMEOUT;
+	}
+
+	private boolean isInDangerZone(NPC npcDangerZone)
+	{
+		Player player = client.getLocalPlayer();
+		if (npcDangerZone == null)
+		{
+			return false;
+		}
+		WorldPoint scorpiaLocation = npcDangerZone.getWorldLocation();
+		int safeDistance = 5;
+		int positiveDistance = 10;
+		int scorpia_Start_x = scorpiaLocation.getX() - safeDistance;
+		int scorpia_Start_y = scorpiaLocation.getY() - safeDistance;
+		int scorpia_End_x = scorpiaLocation.getX() + positiveDistance;
+		int scorpia_End_y = scorpiaLocation.getY() + positiveDistance;
+		WorldPoint scorpia_sw = new WorldPoint(scorpia_Start_x, scorpia_Start_y, 0);
+		WorldPoint scorpia_ne = new WorldPoint(scorpia_End_x, scorpia_End_y, 0);
+		WorldArea ScorpiaDangerZone = new WorldArea(scorpia_sw, scorpia_ne);
+			/*log.info("Scorpia_x : " + scorpiaLocation.getX());
+			log.info("Scorpia_y : " + scorpiaLocation.getY());
+			log.info("scorpia_Start_x : " + scorpia_Start_x);
+			log.info("scorpia_Start_y : " + scorpia_Start_y);
+			log.info("scorpia_End_x : " + scorpia_End_x);
+			log.info("scorpia_End_y : " + scorpia_End_y);
+			log.info("ScorpiaDangerZone_x : " + ScorpiaDangerZone.getX());
+			log.info("ScorpiaDangerZone_y : " + ScorpiaDangerZone.getY());*/
+		return ScorpiaDangerZone.contains(player.getWorldLocation());
+	}
+
+	private long sleepDelay()
+	{
+		sleepLength = calc.randomDelay(config.sleepWeightedDistribution(), config.sleepMin(), config.sleepMax(), config.sleepDeviation(), config.sleepTarget());
+		return sleepLength;
 	}
 }
 

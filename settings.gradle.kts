@@ -29,6 +29,7 @@ include(":willemmmoapi")
 include(":onetickboltenchant")
 include(":corpspec")
 include(":scorpiaassist")
+include(":autogodwars")
 
 for (project in rootProject.children) {
     project.apply {
@@ -39,3 +40,4 @@ for (project in rootProject.children) {
         require(buildFile.isFile) { "Project '${project.path} must have a $buildFile build script" }
     }
 }
+include("autogodwars")
