@@ -128,7 +128,7 @@ public interface AutoGodwarsConfig extends Config
 		section = arma,
 		position = 2,
 		hidden = true,
-		unhide = "enableAutoPrayArma"
+		unhide = "enableArma"
 	)
 	default boolean enableAutoPrayArma()
 	{
@@ -240,7 +240,7 @@ public interface AutoGodwarsConfig extends Config
 		section = sara,
 		position = 2,
 		hidden = true,
-		unhide = "enableAutoPraySara"
+		unhide = "enableSara"
 	)
 	default boolean enableAutoPraySara()
 	{
