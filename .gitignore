@@ -31,3 +31,4 @@ archive
 /.run/*
 /config/*
 pktools/*
+node_modules
