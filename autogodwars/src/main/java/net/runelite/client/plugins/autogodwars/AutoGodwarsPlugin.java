@@ -842,7 +842,7 @@ public class AutoGodwarsPlugin extends Plugin
 	}
 	private void setPrayerActive(Prayer prayer)
 	{
-		if (prayerUtils.isActive(prayer))
+		if (prayerUtils.isActive(prayer) && enableAutoPrayers)
 		{
 			return;
 		}
