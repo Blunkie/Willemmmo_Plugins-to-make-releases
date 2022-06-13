@@ -55,13 +55,13 @@ public class AutoGodwarsHotkeyListener extends MouseAdapter implements KeyListen
 			if (key_code == config.switchPrayerKey().getKeyCode() && !plugin.enableAutoPrayers)
 			{
 				plugin.enableAutoPrayers = true;
-				sendGameMessage("Enabled AutoPrayers", config.enableColor());
+				sendGameMessage("Quick Enabled AutoPrayers", config.enableColor());
 				return;
 			}
 			if (key_code == config.switchPrayerKey().getKeyCode() && plugin.enableAutoPrayers)
 			{
 				plugin.enableAutoPrayers = false;
-				sendGameMessage("Disabled AutoPrayers", config.disableColor());
+				sendGameMessage("Quick Disabled AutoPrayers", config.disableColor());
 			}
 		}
 		catch (Throwable ex)

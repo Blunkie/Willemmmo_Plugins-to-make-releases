@@ -121,6 +121,8 @@ public class AutoGodwarsPlugin extends Plugin
 	@Inject
 	private AutoGodwarsHotkeyListener hotkeyListener;
 	@Inject
+	private getStates getStates;
+	@Inject
 	private KeyManager keyManager;
 	@Getter(AccessLevel.PACKAGE)
 	private final Set<NPCContainer> npcContainers = new HashSet<>();
@@ -259,7 +261,48 @@ public class AutoGodwarsPlugin extends Plugin
 			log.info("TickEvent is Empty");
 		}
 		lastTickTime = System.currentTimeMillis();
-		int is = game.varp(VarPlayer.IS_POISONED.getId());
+		if (!validRegion)
+		{
+			return;
+		}
+		loadBossesIn();
+		//::todo
+		if (config.enableAutoEat())
+		{
+			PlayerStates playerStates = getStates.getPlayerStates();
+			States states = getStates.getState();
+			if (states == States.lol)
+			{
+				infoMessage("");
+			}
+			switch (playerStates)
+			{
+				case EAT_FOOD:
+					break;
+				case FUNCTION_FOUND:
+					break;
+				case ERROR:
+					log.info("There is an error");
+					break;
+				case POISON:
+					log.info("Antipoison running");
+					break;
+			}
+		}
+		switch (client.getLocalPlayer().getWorldLocation().getRegionID())
+		{
+			case ARMA_REGION:
+			case ZAMMY_REGION:
+			case SARA_REGION:
+				break;
+			case GENERAL_REGION:
+				if (config.enableAutoPrayBandos() && enableAutoPrayers)
+				{
+					checkForPrayers();
+				}
+				break;
+		}
+		/*int is = game.varp(VarPlayer.IS_POISONED.getId());
 		log.debug("poison is here : " + is);
 		if (VarPlayer.IS_POISONED.getId() != 0)
 		{
@@ -268,47 +311,23 @@ public class AutoGodwarsPlugin extends Plugin
 			log.info("Value of poison : " + game.varp(VarPlayer.POISON.getId()));
 		}
 		defaultTasks();
-		if (!validRegion)
-		{
-			return;
-		}
-		loadBossesIn();
-		defaultTasks();
+		defaultTasks();*/
 		//hoe pak ik dit aan
 		/*
 		  check map region == current map region
 		  are er monsters>>??
 		  nee. ga to default setup + tiles
 		 */
-		if (config.enableArma() && currentRegionCheck(ARMA_REGION))
-		{
-			runArma();
-		}
-		if (config.enableBandos() && currentRegionCheck(GENERAL_REGION))
-		{
-			runBandos();
-		}
-		if (config.enableSara() && currentRegionCheck(SARA_REGION))
-		{
-			infoMessage("");
-		}
-		if (config.enableZammy() && currentRegionCheck(ZAMMY_REGION))
-		{
-			infoMessage("");
-		}
 	}
-
 	private void loadBossesIn()
 	{
 		for (NPCContainer npc : getNpcContainers())
 		{
 			npc.setNpcInteracting(npc.getNpc().getInteracting());
-
 			if (npc.getTicksUntilAttack() >= 0)
 			{
 				npc.setTicksUntilAttack(npc.getTicksUntilAttack() - 1);
 			}
-
 			for (int animation : npc.getAnimations())
 			{
 				if (animation == npc.getNpc().getAnimation() && npc.getTicksUntilAttack() < 1)
@@ -382,7 +401,7 @@ public class AutoGodwarsPlugin extends Plugin
 			}
 			if (ticksLeft == 1)
 			{
-				CheckForPrayerSwitch(attackStyle);
+				//CheckForPrayerSwitch(attackStyle);
 			}
 		}
 
@@ -540,7 +559,7 @@ public class AutoGodwarsPlugin extends Plugin
 		return worldPoint;
 	}
 
-	private void CheckForPrayerSwitch(NPCContainer.AttackStyle attackStyle)
+	/*private void CheckForPrayerSwitch(NPCContainer.AttackStyle attackStyle)
 	{
 		if (attackStyle.getName().equals("Melee") && enableAutoPrayers)
 		{
@@ -563,7 +582,7 @@ public class AutoGodwarsPlugin extends Plugin
 				prayerUtils.toggle(Prayer.PROTECT_FROM_MAGIC, sleepDelay());
 			}
 		}
-	}
+	}*/
 
 	private void defaultTasks()
 	{
@@ -781,11 +800,38 @@ public class AutoGodwarsPlugin extends Plugin
 			}
 		}
 	}
+
 	private void infoMessage(String Message)
 	{
 		if (!Objects.equals(Message, ""))
 		{
 			log.info(Message);
 		}
+	}
+	private void checkForPrayers()
+	{
+		PrayerEnum state = getStates.shouldSwitchPrayers(npcContainers);
+		switch (state)
+		{
+			case NONE:
+				break;
+			case PROTECT_FROM_MISSILES:
+				setPrayerActive(Prayer.PROTECT_FROM_MISSILES);
+				break;
+			case PROTECT_FROM_MELEE:
+				setPrayerActive(Prayer.PROTECT_FROM_MELEE);
+				break;
+			case PROTECT_FROM_MAGIC:
+				setPrayerActive(Prayer.PROTECT_FROM_MAGIC);
+				break;
+		}
+	}
+	private void setPrayerActive(Prayer prayer)
+	{
+		if (prayerUtils.isActive(prayer))
+		{
+			return;
+		}
+		prayerUtils.toggle(prayer, sleepDelay());
 	}
 }

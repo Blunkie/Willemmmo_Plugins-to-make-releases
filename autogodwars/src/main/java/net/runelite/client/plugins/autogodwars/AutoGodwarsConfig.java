@@ -144,7 +144,7 @@ public interface AutoGodwarsConfig extends Config
 		hidden = true,
 		unhide = "enableBandos"
 	)
-	default boolean enableAutoPrayBandos(String hide)
+	default boolean enableAutoPrayBandos()
 	{
 		return true;
 	}
