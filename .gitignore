@@ -3,6 +3,7 @@ nbactions.xml
 nb-configuration.xml
 /nbproject/
 project.properties
+
 *.iml
 .idea/
 .project
@@ -15,6 +16,8 @@ classes/artifacts/client_jar/client.jar
 !gradle-wrapper.jar
 .live/
 **/build/*
+**/.gradle/*
+**/src/*
 */out/
 .gradle/*
 runelite-client/src/main/resources/runelite/*
