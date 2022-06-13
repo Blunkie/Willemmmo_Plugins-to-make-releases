@@ -31,4 +31,4 @@ archive
 /.run/*
 /config/*
 /gradle/*
-/gradle/wrapper
+/gradle/wrapper/*
