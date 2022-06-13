@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.AccessLevel;
@@ -261,6 +260,10 @@ public class AutoGodwarsPlugin extends Plugin
 			log.info("TickEvent is Empty");
 		}
 		lastTickTime = System.currentTimeMillis();
+		if (config.debug())
+		{
+			doDebugFunction();
+		}
 		if (!validRegion)
 		{
 			return;
@@ -271,6 +274,7 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			PlayerStates playerStates = getStates.getPlayerStates();
 			States states = getStates.getState();
+			inventoryUtils.containsItem(13);
 			if (states == States.lol)
 			{
 				infoMessage("");
@@ -292,28 +296,27 @@ public class AutoGodwarsPlugin extends Plugin
 		switch (client.getLocalPlayer().getWorldLocation().getRegionID())
 		{
 			case ARMA_REGION:
-				if (config.enableAutoPrayArma())
+				if (config.enableAutoPrayArma() && config.enableArma())
 				{
 					checkForPrayers();
-					break;
 				}
+				break;
 			case ZAMMY_REGION:
-				if (config.enableAutoPrayZammy())
+				if (config.enableAutoPrayZammy() && config.enableZammy())
 				{
 					checkForPrayers();
-					break;
 				}
+				break;
 			case SARA_REGION:
-				if (config.enableAutoPraySara())
+				if (config.enableAutoPraySara() && config.enableSara())
 				{
 					checkForPrayers();
-					break;
 				}
+				break;
 			case GENERAL_REGION:
-				if (config.enableAutoPrayBandos())
+				if (config.enableAutoPrayBandos() && config.enableBandos())
 				{
 					checkForPrayers();
-					break;
 				}
 				break;
 		}
@@ -334,6 +337,58 @@ public class AutoGodwarsPlugin extends Plugin
 		  nee. ga to default setup + tiles
 		 */
 	}
+
+	private void doDebugFunction()
+	{
+		if (npcContainers.isEmpty())
+		{
+			log.info("No monster found... to execute this function walk to any godwars region");
+		}
+		if (!npcContainers.isEmpty())
+		{
+			for (NPCContainer npc : getNpcContainers())
+			{
+				if (npc.getNpc() == null)
+				{
+					continue;
+				}
+				int ticksLeft = npc.getTicksUntilAttack();
+				NPCContainer.AttackStyle attackStyle = npc.getAttackStyle();
+				if (ticksLeft <= 0)
+				{
+					continue;
+				}
+				if (config.ignoreNonAttacking() && npc.getNpcInteracting() != client.getLocalPlayer() && npc.getMonsterType() != GENERAL_GRAARDOR && npc.getMonsterType() != KRIL_TSUTSAROTH)
+				{
+					continue;
+				}
+				if (npc.getMonsterType() == KRIL_TSUTSAROTH && npc.getNpcInteracting() != client.getLocalPlayer() && config.prioritiseMage())
+				{
+					attackStyle = NPCContainer.AttackStyle.MAGE;
+				}
+				if (npc.getMonsterType() == GENERAL_GRAARDOR && npc.getNpcInteracting() != client.getLocalPlayer() && config.prioritiseRange())
+				{
+					attackStyle = NPCContainer.AttackStyle.RANGE;
+				}
+				if (ticksLeft == 1)//this function switches {
+				{
+					if (attackStyle.getName().equals("Melee") && config.debug())
+					{
+						log.info("Melee hit incoming from " + npc.getNpcName());
+					}
+					if (attackStyle.getName().equals("Range") && config.debug())
+					{
+						log.info("Range Hit incoming from " + npc.getNpcName());
+					}
+					if (attackStyle.getName().equals("Mage") && config.debug())
+					{
+						log.info("Magic Hit incoming from " + npc.getNpcName());
+					}
+				}
+			}
+		}
+	}
+
 	private void loadBossesIn()
 	{
 		for (NPCContainer npc : getNpcContainers())
@@ -353,134 +408,6 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 	}
 
-	private void runArma()
-	{
-		Set<NPCContainer> container = getNpcContainers();
-		boolean kreeAlive = container.stream().anyMatch(x -> x.getID() == NpcID.KREEARRA);
-		if (container.isEmpty())
-		{
-			log.info("There is nothing alive. . . Resetting");
-		}
-		if (!container.isEmpty())
-		{
-			log.info("There are Npc's alive. . . Handle them.");
-			if (kreeAlive)
-			{
-				infoMessage("");//focus on kree
-			}
-			if (!kreeAlive)
-			{
-				//focus on target
-				if (container.stream().anyMatch(x -> x.getNpcInteracting() == client.getLocalPlayer()))
-				{
-					infoMessage("");
-				}
-			}
-		}
-		//log.info("Starting Kree");
-
-		for (NPCContainer npcContainer : getNpcContainers())
-		{
-			if (npcContainer.getNpc() == null)
-			{
-				return;
-			}
-			if (npcContainer.getNpc().getId() == NpcID.KREEARRA)
-			{
-				log.info("kree is alive");
-			}
-		}
-		Set<NPCContainer> kreeFound = npcContainers.stream().filter(x -> x.getID() == NpcID.KREEARRA).collect(Collectors.toSet());
-		if (!kreeFound.isEmpty())
-		{
-			log.info("StrangeFind");
-		}
-
-		for (NPCContainer npc : getNpcContainers())
-
-		{
-			if (npc.getNpc() == null)//list is empty
-			{
-				continue;
-			}
-			int ticksLeft = npc.getTicksUntilAttack();
-			NPCContainer.AttackStyle attackStyle = npc.getAttackStyle();
-			if (ticksLeft <= 0)
-			{
-				continue;
-			}
-			if (config.ignoreNonAttacking() && npc.getNpcInteracting() != client.getLocalPlayer())
-			{
-				continue;
-			}
-			if (ticksLeft == 1)
-			{
-				//CheckForPrayerSwitch(attackStyle);
-			}
-		}
-
-	}
-
-	/*private void runBandos()
-	{
-		final Player player = client.getLocalPlayer();
-		final WorldPoint altar_Base = findAltar(Bandos_Altar);
-		if (altar_Base == null)
-		{
-			return;//altar is  not existing ending function
-		}
-		WorldPoint SW = new WorldPoint(altar_Base.getX() - 6, altar_Base.getY() - 20, altar_Base.getPlane());
-		WorldPoint NE = new WorldPoint(altar_Base.getX() + 6, altar_Base.getY() - 2, altar_Base.getPlane());
-
-		if (isFocusAlive(config.focusBandos().name()))
-		{
-			NPC focusNPC = fetchNPC(config.focusBandos().name());
-			if (focusNPC == null)
-			{
-				return;
-			}
-			NPC currentNPC = (NPC) player.getInteracting();
-			if (currentNPC == null || currentNPC != focusNPC)
-			{
-				SendAttackOrder(focusNPC);
-			}
-		}
-		if (!isFocusAlive(config.focusBandos().name()))
-		{
-			NPC killNPC = fetchFirstNPC();
-			if (player.getInteracting() != null || killNPC == null)
-			{
-				return;
-			}
-			SendAttackOrder(killNPC);
-		}
-		for (NPCContainer npc : getNpcContainers())
-		{
-			if (npc.getNpc() == null)
-			{
-				continue;
-			}
-			int ticksLeft = npc.getTicksUntilAttack();
-			NPCContainer.AttackStyle attackStyle = npc.getAttackStyle();
-			if (ticksLeft <= 0)
-			{
-				continue;
-			}
-			if (config.ignoreNonAttacking() && npc.getNpcInteracting() != client.getLocalPlayer() && npc.getMonsterType() != GENERAL_GRAARDOR)
-			{
-				continue;
-			}
-			if (npc.getMonsterType() == GENERAL_GRAARDOR && npc.getNpcInteracting() != client.getLocalPlayer() && config.prioritiseRange())
-			{
-				attackStyle = NPCContainer.AttackStyle.RANGE;
-			}
-			if (ticksLeft == 1)
-			{
-				CheckForPrayerSwitch(attackStyle);
-			}
-		}
-	}
-	 */
 	private void runBandos()
 	{
 		Player player = client.getLocalPlayer();
@@ -573,31 +500,6 @@ public class AutoGodwarsPlugin extends Plugin
 		return worldPoint;
 	}
 
-	/*private void CheckForPrayerSwitch(NPCContainer.AttackStyle attackStyle)
-	{
-		if (attackStyle.getName().equals("Melee") && enableAutoPrayers)
-		{
-			if (!prayerUtils.isActive(Prayer.PROTECT_FROM_MELEE))
-			{
-				prayerUtils.toggle(Prayer.PROTECT_FROM_MELEE, sleepDelay());
-			}
-		}
-		if (attackStyle.getName().equals("Range") && enableAutoPrayers)
-		{
-			if (!prayerUtils.isActive(Prayer.PROTECT_FROM_MISSILES))
-			{
-				prayerUtils.toggle(Prayer.PROTECT_FROM_MISSILES, sleepDelay());
-			}
-		}
-		if (attackStyle.getName().equals("Mage") && enableAutoPrayers)
-		{
-			if (!prayerUtils.isActive(Prayer.PROTECT_FROM_MAGIC))
-			{
-				prayerUtils.toggle(Prayer.PROTECT_FROM_MAGIC, sleepDelay());
-			}
-		}
-	}*/
-
 	private void defaultTasks()
 	{
 		//Poison
@@ -608,46 +510,7 @@ public class AutoGodwarsPlugin extends Plugin
 			//AutoGodwarsEnum.Food.ANGLERFISH.getId();
 			inventoryUtils.interactWithItem(391, sleepDelay(), "eat");
 		}
-		for (NPCContainer npc : getNpcContainers())
-		{
-			if (npc.getNpc() == null)
-			{
-				continue;
-			}
-			int ticksLeft = npc.getTicksUntilAttack();
-			NPCContainer.AttackStyle attackStyle = npc.getAttackStyle();
-			if (ticksLeft <= 0)
-			{
-				continue;
-			}
-			if (config.ignoreNonAttacking() && npc.getNpcInteracting() != client.getLocalPlayer() && npc.getMonsterType() != GENERAL_GRAARDOR && npc.getMonsterType() != KRIL_TSUTSAROTH)
-			{
-				continue;
-			}
-			if (npc.getMonsterType() == KRIL_TSUTSAROTH && npc.getNpcInteracting() != client.getLocalPlayer() && config.prioritiseMage())
-			{
-				attackStyle = NPCContainer.AttackStyle.MAGE;
-			}
-			if (npc.getMonsterType() == GENERAL_GRAARDOR && npc.getNpcInteracting() != client.getLocalPlayer() && config.prioritiseRange())
-			{
-				attackStyle = NPCContainer.AttackStyle.RANGE;
-			}
-			if (ticksLeft == 1)//this function switches {
-			{
-				if (attackStyle.getName().equals("Melee") && config.debug())
-				{
-					game.sendGameMessage("Melee hit incoming from " + npc.getNpcName());
-				}
-				if (attackStyle.getName().equals("Range") && config.debug())
-				{
-					game.sendGameMessage("Range Hit incoming from " + npc.getNpcName());
-				}
-				if (attackStyle.getName().equals("Mage") && config.debug())
-				{
-					game.sendGameMessage("Magic Hit incoming from " + npc.getNpcName());
-				}
-			}
-		}
+
 	}
 
 	private boolean regionCheck()
@@ -657,10 +520,6 @@ public class AutoGodwarsPlugin extends Plugin
 		);
 	}
 
-	private boolean currentRegionCheck(int region)
-	{
-		return client.getLocalPlayer().getWorldLocation().getRegionID() == region;
-	}
 
 	private void addNpc(NPC npc)
 	{
@@ -668,7 +527,16 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			return;
 		}
-
+		if (config.debug())
+		{
+			NPCContainer.BossMonsters monster = NPCContainer.BossMonsters.of(npc.getId());
+			if (monster == null)
+			{
+				return;
+			}
+			log.info("Adding this npc to the list caused by debug function : " + npc.getName());
+			npcContainers.add(new NPCContainer(npc));
+		}
 		switch (npc.getId())
 		{
 			//adding selected npc's to the list depending on config
@@ -705,7 +573,6 @@ public class AutoGodwarsPlugin extends Plugin
 					npcContainers.add(new NPCContainer(npc));
 				}
 				break;
-
 		}
 	}
 
@@ -747,7 +614,6 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			return;
 		}
-
 		switch (npc.getId())
 		{
 			case NpcID.SERGEANT_STRONGSTACK:
@@ -797,7 +663,7 @@ public class AutoGodwarsPlugin extends Plugin
 	{
 		for (Prayer prayer : Prayer.values())
 		{
-			if (client.getVarbitValue(prayer.getVarbit()) == 1)
+			if (client.getVarbitValue(prayer.getVarbit()) == 1 && !prayer.name().equals(Prayer.PRESERVE.name()))
 			{
 				Widget widget = client.getWidget(prayer.getWidgetInfo());
 				if (widget != null)
@@ -824,7 +690,8 @@ public class AutoGodwarsPlugin extends Plugin
 	}
 	private void checkForPrayers()
 	{
-		PrayerEnum state = getStates.shouldSwitchPrayers(npcContainers);
+		npcContainers.forEach(x -> log.info("name = " + x.getNpcName()));
+		PrayerEnum state = getStates.shouldSwitchPrayers(getNpcContainers());
 		switch (state)
 		{
 			case NONE:
@@ -838,15 +705,21 @@ public class AutoGodwarsPlugin extends Plugin
 			case PROTECT_FROM_MAGIC:
 				setPrayerActive(Prayer.PROTECT_FROM_MAGIC);
 				break;
+			case DISABLE:
+				disableAllPrayer();
+				break;
 		}
 	}
 	private void setPrayerActive(Prayer prayer)
 	{
-		if (prayerUtils.isActive(prayer) && enableAutoPrayers)
+		if (prayerUtils.isActive(prayer) ||  !enableAutoPrayers)
 		{
 			return;
 		}
-		prayerUtils.toggle(prayer, sleepDelay());
+		if (enableAutoPrayers && !prayerUtils.isActive(prayer))
+		{
+			prayerUtils.toggle(prayer, sleepDelay());
+		}
 	}
 	//THIS FUNCTION IS TO FIND ANY NPC WITHIN THE NPC CONTAINER
 	//          List<NPCContainer> found = npcContainers.stream().filter(x -> x.getID() == GENERAL_GRAARDOR.getNpcID()).collect(Collectors.toList());
