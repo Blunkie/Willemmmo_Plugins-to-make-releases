@@ -99,7 +99,14 @@ class NPCContainer
 	{
 		return getMonsterType().npcID;
 	}
-
+	public NPC exists(int id)
+	{
+		if (getNpc().getId() == id)
+		{
+			return npc;
+		}
+		return null;
+	}
 	@Override
 	public boolean equals(Object o)
 	{
@@ -157,12 +164,10 @@ class NPCContainer
 		private final AttackStyle attackStyle;
 		private final ImmutableSet<Integer> animations;
 		private final int attackSpeed;
-
 		public static BossMonsters of(int npcID)
 		{
 			return idMap.get(npcID);
 		}
-
 	}
 
 	@AllArgsConstructor

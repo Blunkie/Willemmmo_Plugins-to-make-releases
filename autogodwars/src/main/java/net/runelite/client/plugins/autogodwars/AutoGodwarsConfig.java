@@ -121,6 +121,20 @@ public interface AutoGodwarsConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "enableAutoPrayArma",
+		name = "Auto Pray Armadyl",
+		description = "Do you want to Auto Pray in Armadyl room",
+		section = arma,
+		position = 2,
+		hidden = true,
+		unhide = "enableAutoPrayArma"
+	)
+	default boolean enableAutoPrayArma()
+	{
+		return true;
+	}
+
 	/**
 	 * -------------------------------------------------------------BANDOS SECTION
 	 */
@@ -137,7 +151,7 @@ public interface AutoGodwarsConfig extends Config
 	}
 	@ConfigItem(
 		keyName = "enableAutoPrayBandos",
-		name = "Auto PrayBandos",
+		name = "Auto Pray Bandos",
 		description = "Do you want to Auto Pray in Bandos room",
 		section = bandos,
 		position = 2,
@@ -219,6 +233,19 @@ public interface AutoGodwarsConfig extends Config
 	{
 		return true;
 	}
+	@ConfigItem(
+		keyName = "enableAutoPraySara",
+		name = "Auto Pray Saradomin",
+		description = "Do you want to Auto Pray in Saradomin room",
+		section = sara,
+		position = 2,
+		hidden = true,
+		unhide = "enableAutoPraySara"
+	)
+	default boolean enableAutoPraySara()
+	{
+		return true;
+	}
 
 	/**
 	 * -------------------------------------------------------------ZAMORAK SECTION
@@ -236,11 +263,26 @@ public interface AutoGodwarsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "enableAutoPrayZammy",
+		name = "Auto Pray Zamorak",
+		description = "Do you want to Auto Pray in Zamorak room",
+		section = zammy,
+		position = 2,
+		hidden = true,
+		unhide = "enableZammy"
+	)
+	default boolean enableAutoPrayZammy()
+	{
+		return true;
+	}
+	@ConfigItem(
 		keyName = "prioritiseMage",
 		name = "Prioritise Mage",
 		description = "Prioritise Mage prayer on Zamorak when not Tanking",
 		section = zammy,
-		position = 2
+		position = 3,
+		hidden = true,
+		unhide = "enableZammy"
 	)
 	default boolean prioritiseMage()
 	{
@@ -505,6 +547,4 @@ public interface AutoGodwarsConfig extends Config
 	{
 		return false;
 	}
-
-
 }

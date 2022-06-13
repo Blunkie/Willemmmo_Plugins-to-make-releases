@@ -292,13 +292,28 @@ public class AutoGodwarsPlugin extends Plugin
 		switch (client.getLocalPlayer().getWorldLocation().getRegionID())
 		{
 			case ARMA_REGION:
-			case ZAMMY_REGION:
-			case SARA_REGION:
-				break;
-			case GENERAL_REGION:
-				if (config.enableAutoPrayBandos() && enableAutoPrayers)
+				if (config.enableAutoPrayArma())
 				{
 					checkForPrayers();
+					break;
+				}
+			case ZAMMY_REGION:
+				if (config.enableAutoPrayZammy())
+				{
+					checkForPrayers();
+					break;
+				}
+			case SARA_REGION:
+				if (config.enableAutoPraySara())
+				{
+					checkForPrayers();
+					break;
+				}
+			case GENERAL_REGION:
+				if (config.enableAutoPrayBandos())
+				{
+					checkForPrayers();
+					break;
 				}
 				break;
 		}
@@ -378,7 +393,6 @@ public class AutoGodwarsPlugin extends Plugin
 		Set<NPCContainer> kreeFound = npcContainers.stream().filter(x -> x.getID() == NpcID.KREEARRA).collect(Collectors.toSet());
 		if (!kreeFound.isEmpty())
 		{
-			log.info(kreeFound.toString());
 			log.info("StrangeFind");
 		}
 
@@ -834,4 +848,20 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 		prayerUtils.toggle(prayer, sleepDelay());
 	}
+	//THIS FUNCTION IS TO FIND ANY NPC WITHIN THE NPC CONTAINER
+	//          List<NPCContainer> found = npcContainers.stream().filter(x -> x.getID() == GENERAL_GRAARDOR.getNpcID()).collect(Collectors.toList());
+	//			Set<NPCContainer> BandosFound = npcContainers.stream().filter(x -> x.getID() == NpcID.GENERAL_GRAARDOR).collect(Collectors.toSet());
+	//			log.info("First Result" + BandosFound.stream().findFirst().get().getNpcName());
+	//			NPCContainer.BossMonsters npc = NPCContainer.BossMonsters.of(GENERAL_GRAARDOR.getNpcID());
+	//			if (npc != null)
+	//			{
+	//				log.info("id:" + npc.getNpcID());
+	//				log.info("Name:" + npc.name());
+	//				log.info("AttackStyle:" + npc.getAttackStyle());
+	//				npc.getAnimations().forEach(x -> log.info(x.toString()));
+	//			}
+	//			if (npcContainers.stream().anyMatch(x -> x.getID() == GENERAL_GRAARDOR.getNpcID()))
+	//			{
+	//				log.info("we have found bandos");
+	//			}
 }
