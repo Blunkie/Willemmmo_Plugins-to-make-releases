@@ -30,10 +30,4 @@ archive
 /.github/
 /.run/*
 /config/*
-/gradle/
-/gradle/wrapper/
-/gradle/wrapper/gradle-wrapper.jar
-/gradle/wrapper/gradle-wrapper.properties
-/pktools/build
-/pktools/src/
-pktools/pktools.gradle.kts
+pktools/*
