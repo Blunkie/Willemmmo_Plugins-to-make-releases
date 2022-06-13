@@ -32,3 +32,4 @@ archive
 /config/*
 pktools/*
 node_modules/
+/release
