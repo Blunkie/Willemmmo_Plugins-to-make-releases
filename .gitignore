@@ -26,6 +26,7 @@ archive
 /.run/
 /.github/
 /.run/*
+/thieving/*
 /config/
 /gradle/*
 /pktools/*
