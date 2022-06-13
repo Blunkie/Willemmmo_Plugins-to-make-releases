@@ -2,6 +2,8 @@ package net.runelite.client.plugins.autogodwars;
 /*
  * Copyright (c) 2019, Ganom <https://github.com/Ganom>
  * Copyright (c) 2019, Lucas <https://github.com/lucwousin>
+ * Copyright (c) 2019, Xkylee <https://github.com/xKylee>
+ * HUGE ThANK YOU TO THE THREE OF THEM
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,6 +95,11 @@ class NPCContainer
 		return Objects.hash(npc);
 	}
 
+	public int getID()
+	{
+		return getMonsterType().npcID;
+	}
+
 	@Override
 	public boolean equals(Object o)
 	{
@@ -109,7 +116,8 @@ class NPCContainer
 	}
 
 	@RequiredArgsConstructor
-	enum BossMonsters
+	@Getter
+	public enum BossMonsters
 	{
 		SERGEANT_STRONGSTACK(NpcID.SERGEANT_STRONGSTACK, AttackStyle.MELEE, ImmutableSet.of(MINION_AUTO1, MINION_AUTO2, MINION_AUTO3), 5),
 		SERGEANT_STEELWILL(NpcID.SERGEANT_STEELWILL, AttackStyle.MAGE, ImmutableSet.of(MINION_AUTO1, MINION_AUTO2, MINION_AUTO3), 5),
@@ -150,10 +158,11 @@ class NPCContainer
 		private final ImmutableSet<Integer> animations;
 		private final int attackSpeed;
 
-		static BossMonsters of(int npcID)
+		public static BossMonsters of(int npcID)
 		{
 			return idMap.get(npcID);
 		}
+
 	}
 
 	@AllArgsConstructor
@@ -165,8 +174,8 @@ class NPCContainer
 		MELEE("Melee", Color.RED, Prayer.PROTECT_FROM_MELEE),
 		UNKNOWN("Unknown", Color.WHITE, null);
 
-		private String name;
-		private Color color;
-		private Prayer prayer;
+		private final String name;
+		private final Color color;
+		private final Prayer prayer;
 	}
 }

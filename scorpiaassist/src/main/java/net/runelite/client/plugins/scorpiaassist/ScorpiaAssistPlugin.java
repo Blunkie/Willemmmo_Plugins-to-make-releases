@@ -371,6 +371,10 @@ public class ScorpiaAssistPlugin extends iScript
 		{
 			Targets.add(spawnedNpc);
 		}
+		else
+		{
+			return;
+		}
 	}
 
 	private void onNpcDespawned(NpcDespawned event)
