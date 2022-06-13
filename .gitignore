@@ -35,5 +35,5 @@ archive
 /gradle/wrapper/gradle-wrapper.jar
 /gradle/wrapper/gradle-wrapper.properties
 /pktools/build
-/pktools/srs/
+/pktools/src/
 pktools/pktools.gradle.kts
