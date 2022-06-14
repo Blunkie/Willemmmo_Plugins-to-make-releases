@@ -38,18 +38,25 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
+import net.runelite.api.InventoryID;
+import net.runelite.api.Item;
+import net.runelite.api.ItemComposition;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
 import net.runelite.api.Prayer;
+import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.widgets.Widget;
@@ -59,10 +66,12 @@ import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.PRAYER_POTION;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.SANFEW_SERUM;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.SUPER_RESTORE;
 import static net.runelite.client.plugins.autogodwars.NPCContainer.BossMonsters.GENERAL_GRAARDOR;
 import static net.runelite.client.plugins.autogodwars.NPCContainer.BossMonsters.KRIL_TSUTSAROTH;
 import net.runelite.client.plugins.iutils.ActionQueue;
-import net.runelite.client.plugins.iutils.CalculationUtils;
 import net.runelite.client.plugins.iutils.InventoryUtils;
 import net.runelite.client.plugins.iutils.LegacyMenuEntry;
 import net.runelite.client.plugins.iutils.MenuUtils;
@@ -126,6 +135,8 @@ public class AutoGodwarsPlugin extends Plugin
 	@Getter(AccessLevel.PACKAGE)
 	private final Set<NPCContainer> npcContainers = new HashSet<>();
 	@Getter(AccessLevel.PACKAGE)
+	private final Set<AutoGodwarsEnum.Stamina> staminaContainer = new HashSet<>();
+	@Getter(AccessLevel.PACKAGE)
 	private final Set<GameObjectContainer> gameObjectContainers = new HashSet<>();
 	protected boolean enableAutoPrayers = false;
 	private boolean validRegion;
@@ -137,8 +148,6 @@ public class AutoGodwarsPlugin extends Plugin
 	private Game game;
 	@Inject
 	private PrayerUtils prayerUtils;
-	@Inject
-	private CalculationUtils calc;
 	@Inject
 	private MouseUtils mouse;
 	@Inject
@@ -195,7 +204,7 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			return;
 		}
-
+		staminaContainer.clear();
 		if (regionCheck())
 		{
 			npcContainers.clear();
@@ -220,6 +229,36 @@ public class AutoGodwarsPlugin extends Plugin
 			return;
 		}
 		addNpc(event.getNpc());
+	}
+
+	@Subscribe
+	private void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() == InventoryID.INVENTORY.getId())
+		{
+			log.info("Inventory did change");
+		}
+		ItemContainer itemContainer = client.getItemContainer(InventoryID.INVENTORY);
+		staminaContainer.clear();
+		for (Item item : itemContainer.getItems())
+		{
+			AutoGodwarsEnum.Stamina stamina = AutoGodwarsEnum.Stamina.of(item.getId());
+			if (stamina != null)
+			{
+				log.info("Adding to container : " + item.getId());
+				staminaContainer.add(stamina);
+			}
+		}
+		if (event.getContainerId() == InventoryID.EQUIPMENT.getId())
+		{
+			ItemContainer container = client.getItemContainer(InventoryID.EQUIPMENT);
+			{
+				for (Item item : container.getItems())
+				{
+					ItemComposition composition = client.getItemComposition(item.getId());
+				}
+			}
+		}
 	}
 
 	@Subscribe
@@ -259,6 +298,7 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			log.info("TickEvent is Empty");
 		}
+		log.info("Size : " + staminaContainer.size());
 		lastTickTime = System.currentTimeMillis();
 		if (config.debug())
 		{
@@ -270,28 +310,9 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 		loadBossesIn();
 		//::todo
-		if (config.enableAutoEat())
+		if (config.enableAutoEat() || config.restorePrayer())
 		{
-			PlayerStates playerStates = getStates.getPlayerStates();
-			States states = getStates.getState();
-			inventoryUtils.containsItem(13);
-			if (states == States.lol)
-			{
-				infoMessage("");
-			}
-			switch (playerStates)
-			{
-				case EAT_FOOD:
-					break;
-				case FUNCTION_FOUND:
-					break;
-				case ERROR:
-					log.info("There is an error");
-					break;
-				case POISON:
-					log.info("Antipoison running");
-					break;
-			}
+			checkPlayerState();
 		}
 		switch (client.getLocalPlayer().getWorldLocation().getRegionID())
 		{
@@ -320,27 +341,16 @@ public class AutoGodwarsPlugin extends Plugin
 				}
 				break;
 		}
-		/*int is = game.varp(VarPlayer.IS_POISONED.getId());
-		log.debug("poison is here : " + is);
-		if (VarPlayer.IS_POISONED.getId() != 0)
-		{
-			log.info("" + VarPlayer.IS_POISONED.getId());
-			log.info("a" + game.varp(VarPlayer.IS_POISONED.getId()));
-			log.info("Value of poison : " + game.varp(VarPlayer.POISON.getId()));
-		}
-		defaultTasks();
-		defaultTasks();*/
-		//hoe pak ik dit aan
-		/*
-		  check map region == current map region
-		  are er monsters>>??
-		  nee. ga to default setup + tiles
-		 */
 	}
 
 	private void doDebugFunction()
 	{
-		if (npcContainers.isEmpty())
+		AutoGodwarsEnum.Stamina stamina = AutoGodwarsEnum.Stamina.of(ItemID.STAMINA_POTION1);
+		if (stamina == null)
+		{
+			log.info("notfound stamina");
+		}
+		if (npcContainers.isEmpty() && validRegion)
 		{
 			log.info("No monster found... to execute this function walk to any godwars region");
 		}
@@ -387,6 +397,136 @@ public class AutoGodwarsPlugin extends Plugin
 				}
 			}
 		}
+		if (config.enableAutoEat() && inventoryUtils.containsItem(ItemID.COOKED_KARAMBWAN))
+		{
+			if (inventoryUtils.containsItem(ItemID.COOKED_KARAMBWAN))
+			{
+				checkPlayerState();
+			}
+			if (!inventoryUtils.containsItem(ItemID.COOKED_KARAMBWAN))
+			{
+				log.info("To test the eat Function, grab a Cooked Karambwan else it doesnt work");
+			}
+		}
+		if (config.cureVenomPoison())
+		{
+			HandlePoison();
+		}
+		if (config.restorePrayer())
+		{
+			handleDrinkPrayer();
+		}
+
+	}
+
+	private void checkPlayerState()
+	{
+		PlayerStates playerStates = getStates.getPlayerStates();
+		switch (playerStates)
+		{
+			case EAT_FOOD:
+				if (config.debug())
+				{
+					inventoryUtils.interactWithItem(ItemID.COOKED_KARAMBWAN, game.sleepDelay(), "Eat");
+				}
+				break;
+			case DRINK_PRAYER:
+				if (config.debug())
+				{
+					handleDrinkPrayer();
+				}
+				break;
+			case FUNCTION_FOUND:
+				break;
+			case ERROR:
+				log.info("There is an error");
+				break;
+			case POISON:
+				HandlePoison();
+				break;
+		}
+	}
+
+	private void HandlePoison()
+	{
+		int[] sanfewID = AutoGodwarsEnum.Antivenom.SANFEW_SERUM.getIds();
+		for (AutoGodwarsEnum.Antivenom antivenom : AutoGodwarsEnum.Antivenom.values())
+		{
+			if (inventoryCheck(sanfewID) && config.poisonCheckPrayer())
+			{
+				double statRestore = (client.getRealSkillLevel(Skill.PRAYER) * 0.3) + 4;
+				if (antivenom.name().equals(AutoGodwarsEnum.Antivenom.SANFEW_SERUM.name()) && client.getBoostedSkillLevel(Skill.PRAYER) < client.getRealSkillLevel(Skill.PRAYER) - Math.floor(statRestore))
+				{
+					for (int doseID : antivenom.getIds())
+					{
+						if (inventoryUtils.containsItem(doseID))
+						{
+							inventoryUtils.interactWithItem(doseID, game.tickDelay(), "Drink");
+							return;
+						}
+					}
+				}
+			}
+			if (!config.poisonCheckPrayer() || !inventoryCheck(sanfewID))
+			{
+				for (int doseID : antivenom.getIds())
+				{
+					if (inventoryUtils.containsItem(doseID))
+					{
+						inventoryUtils.interactWithItem(doseID, game.tickDelay(), "Drink");
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	public boolean inventoryCheck(int[] array)
+	{
+		for (int i : array)
+		{
+			if (inventoryUtils.containsItem(i))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void handleDrinkPrayer()
+	{
+		for (AutoGodwarsEnum.RestorePrayer restorePrayer : AutoGodwarsEnum.RestorePrayer.values())
+		{
+			if (inventoryCheck(restorePrayer.getIds()))
+			{
+				log.info(restorePrayer.name());
+				double statRestore = 0;
+				if (restorePrayer.name().equals(SANFEW_SERUM.name()))
+				{
+					statRestore = (client.getRealSkillLevel(Skill.PRAYER) * 0.3) + 4;
+				}
+				if (restorePrayer.name().equals(SUPER_RESTORE.name()))
+				{
+					statRestore = (client.getRealSkillLevel(Skill.PRAYER) * 0.27) + 8;
+				}
+				if (restorePrayer.name().equals(PRAYER_POTION.name()))
+				{
+					statRestore = (client.getRealSkillLevel(Skill.PRAYER) * 0.25) + 7;
+				}
+				if (client.getBoostedSkillLevel(Skill.PRAYER) < client.getRealSkillLevel(Skill.PRAYER) - Math.floor(statRestore) && statRestore > 0)
+				{
+					log.info("Entering this function");
+					for (int doseID : restorePrayer.getIds())
+					{
+						if (inventoryUtils.containsItem(doseID))
+						{
+							inventoryUtils.interactWithItem(doseID, game.sleepDelay(), "Drink");
+							return;
+						}
+					}
+				}
+			}
+		}
 	}
 
 	private void loadBossesIn()
@@ -405,27 +545,6 @@ public class AutoGodwarsPlugin extends Plugin
 					npc.setTicksUntilAttack(npc.getAttackSpeed());
 				}
 			}
-		}
-	}
-
-	private void runBandos()
-	{
-		Player player = client.getLocalPlayer();
-		if (player == null)
-		{
-			infoMessage("Player not found in RunBandos");
-			return;
-		}
-		if (getNpcContainers().isEmpty())
-		{
-			disableAllPrayer();
-			//nothing alive. return to base
-		}
-		if (!getNpcContainers().isEmpty())
-		{
-			infoMessage("");
-			//handlePrayers();
-			//theres something alive
 		}
 	}
 
@@ -476,7 +595,7 @@ public class AutoGodwarsPlugin extends Plugin
 		log.info("Setting kill order");
 		if (player.getInteracting() == null || !Objects.equals(player.getInteracting().getName(), npc.getName()))
 		{
-			utils.doNpcActionMsTime(npc, MenuAction.NPC_SECOND_OPTION.getId(), sleepDelay());
+			utils.doNpcActionMsTime(npc, MenuAction.NPC_SECOND_OPTION.getId(), game.sleepDelay());
 		}
 	}
 
@@ -508,7 +627,7 @@ public class AutoGodwarsPlugin extends Plugin
 		if (PoisonValue > 0)
 		{
 			//AutoGodwarsEnum.Food.ANGLERFISH.getId();
-			inventoryUtils.interactWithItem(391, sleepDelay(), "eat");
+			inventoryUtils.interactWithItem(391, game.sleepDelay(), "eat");
 		}
 
 	}
@@ -654,11 +773,6 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 	}
 
-	private long sleepDelay()
-	{
-		return calc.randomDelay(config.sleepWeightedDistribution(), config.sleepMin(), config.sleepMax(), config.sleepDeviation(), config.sleepTarget());
-	}
-
 	private void disableAllPrayer()
 	{
 		for (Prayer prayer : Prayer.values())
@@ -675,7 +789,7 @@ public class AutoGodwarsPlugin extends Plugin
 						menu.setEntry(toggle);
 						mouse.handleMouseClick(p);
 					};
-					action.delayTime(sleepDelay(), runnable);
+					action.delayTime(game.sleepDelay(), runnable);
 				}
 			}
 		}
@@ -690,7 +804,6 @@ public class AutoGodwarsPlugin extends Plugin
 	}
 	private void checkForPrayers()
 	{
-		npcContainers.forEach(x -> log.info("name = " + x.getNpcName()));
 		PrayerEnum state = getStates.shouldSwitchPrayers(getNpcContainers());
 		switch (state)
 		{
@@ -712,13 +825,13 @@ public class AutoGodwarsPlugin extends Plugin
 	}
 	private void setPrayerActive(Prayer prayer)
 	{
-		if (prayerUtils.isActive(prayer) ||  !enableAutoPrayers)
+		if (prayerUtils.isActive(prayer) || !enableAutoPrayers)
 		{
 			return;
 		}
 		if (enableAutoPrayers && !prayerUtils.isActive(prayer))
 		{
-			prayerUtils.toggle(prayer, sleepDelay());
+			prayerUtils.toggle(prayer, game.sleepDelay());
 		}
 	}
 	//THIS FUNCTION IS TO FIND ANY NPC WITHIN THE NPC CONTAINER

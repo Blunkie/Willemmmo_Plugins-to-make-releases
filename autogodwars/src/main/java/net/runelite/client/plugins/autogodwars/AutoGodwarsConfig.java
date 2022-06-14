@@ -84,25 +84,43 @@ public interface AutoGodwarsConfig extends Config
 	)
 	String prayers = "Prayers";
 	@ConfigSection(
-		keyName = "consumables",
+		keyName = "autoEatFoodSection",
 		position = 7,
-		name = "Consumables",
+		name = "Auto Eat Food",
 		description = "",
 		closedByDefault = true
 	)
-	String consumables = "Consumables";
+	String autoEatFoodSection = "Auto Eat Food";
+	@ConfigSection(
+		keyName = "autoDrinkPrayerSection",
+		position = 8,
+		name = "Auto Drink Prayer",
+		description = "",
+		closedByDefault = true
+	)
+	String autoDrinkPrayerSection = "Auto Drink Prayer";
+	@ConfigSection(
+		keyName = "consumables",
+		position = 9,
+		name = "Other Consumables",
+		description = "",
+		closedByDefault = true
+	)
+	String consumables = "Other Consumables";
 	@ConfigSection(
 		keyName = "magic",
-		position = 8,
+		position = 10,
 		name = "Magic",
-		description = ""
+		description = "",
+		closedByDefault = true
 	)
 	String magic = "Magic";
 	@ConfigSection(
 		keyName = "debug",
-		position = 9,
+		position = 11,
 		name = "Debugging",
-		description = ""
+		description = "",
+		closedByDefault = true
 	)
 	String debug = "Debugging";
 
@@ -420,14 +438,22 @@ public interface AutoGodwarsConfig extends Config
 	}
 
 	/**
-	 * -------------------------------------------------------------CONSUMABLES SECTION
+	 * -------------------------------------------------------------AUTO EAT FOOD SECTION
 	 */
+	@ConfigTitle(
+		keyName = "eatTitle",
+		name = "Auto Eat Settings",
+		description = "",
+		section = autoEatFoodSection,
+		position = 0
+	)
+	String eatTitle = "Auto Eat Settings";
 	@ConfigItem(
 		keyName = "enableAutoEat",
 		name = "Enable Auto Eat",
-		description = "Do you want to auto eat",
-		section = consumables,
-		position = 0
+		description = "Do you want to Auto Eat?",
+		section = autoEatFoodSection,
+		position = 1
 	)
 	default boolean enableAutoEat()
 	{
@@ -437,9 +463,9 @@ public interface AutoGodwarsConfig extends Config
 	@ConfigItem(
 		keyName = "eatBelow",
 		name = "Eat Below",
-		description = "Between what HP you want to eat",
-		section = consumables,
-		position = 1,
+		description = "Below what HP you want to Auto Eat?",
+		section = autoEatFoodSection,
+		position = 2,
 		hidden = true,
 		unhide = "enableAutoEat"
 	)
@@ -453,11 +479,29 @@ public interface AutoGodwarsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "eatDeviation",
+		name = "Eat Deviation",
+		description = "% of health to variate at Eating Food",
+		section = autoEatFoodSection,
+		position = 3,
+		hidden = true,
+		unhide = "enableAutoEat"
+	)
+	@Range(
+		min = 1,
+		max = 20
+	)
+	default int eatDeviation()
+	{
+		return 5;
+	}
+
+	@ConfigItem(
 		keyName = "useBrews",
 		name = "Use Brews",
-		description = "",
-		section = consumables,
-		position = 2,
+		description = "Do you want to use Brews?",
+		section = autoEatFoodSection,
+		position = 4,
 		hidden = true,
 		unhide = "enableAutoEat"
 	)
@@ -467,30 +511,50 @@ public interface AutoGodwarsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "healthDeviation",
-		name = "Health Deviation",
-		description = "Amount of hitpoints to variate eat below",
-		section = consumables,
-		position = 3,
+		keyName = "restoreAfter",
+		name = "Restore after Brew",
+		description = "Do you want to restore after Brews?",
+		section = autoEatFoodSection,
+		position = 5,
 		hidden = true,
 		unhide = "enableAutoEat"
 	)
-	@Range(
-		min = 1,
-		max = 10
-	)
-	default int healthDeviation()
+	default boolean restoreAfter()
 	{
-		return 10;
+		return true;
 	}
+
+	@ConfigItem(
+		keyName = "prioritiseHardFood",
+		name = "Prioritise Hard Food",
+		description = "Enabling this Prioritises hard food over Brews",
+		section = autoEatFoodSection,
+		position = 6,
+		hidden = true,
+		unhide = "enableAutoEat"
+	)
+	default boolean prioritiseHardFood()
+	{
+		return true;
+	}
+	/**
+	 * -------------------------------------------------------------AUTO DRINK PRAYER SECTION
+	 */
+	@ConfigTitle(
+		keyName = "prayTitle",
+		name = "Auto Drink Prayer Settings",
+		description = "",
+		section = autoDrinkPrayerSection,
+		position = 0
+	)
+	String prayTitle = "Auto Drink Prayer Settings";
+
 	@ConfigItem(
 		keyName = "restorePrayer",
 		name = "Restore Prayer",
 		description = "Do you want to restore Prayer",
-		section = consumables,
-		position = 4,
-		hidden = true,
-		unhide = "enableAutoEat"
+		position = 1,
+		section = autoDrinkPrayerSection
 	)
 	default boolean restorePrayer()
 	{
@@ -501,10 +565,10 @@ public interface AutoGodwarsConfig extends Config
 		keyName = "restorePrayerBelow",
 		name = "Restore Below",
 		description = "Below what prayer points to restore",
-		section = consumables,
-		position = 5,
+		section = autoDrinkPrayerSection,
+		position = 2,
 		hidden = true,
-		unhide = "enableAutoEat"
+		unhide = "restorePrayer"
 	)
 	@Range(
 		min = 1,
@@ -518,21 +582,47 @@ public interface AutoGodwarsConfig extends Config
 	@ConfigItem(
 		keyName = "prayerDeviation",
 		name = "Prayer Deviation",
-		description = "Amount of prayer to variate at Prayer",
-		section = consumables,
-		position = 6,
+		description = "% of prayer to variate at Prayer",
+		section = autoDrinkPrayerSection,
+		position = 3,
 		hidden = true,
-		unhide = "enableAutoEat"
+		unhide = "restorePrayer"
 	)
 	@Range(
 		min = 1,
-		max = 10
+		max = 20
 	)
 	default int prayerDeviation()
 	{
-		return 10;
+		return 5;
 	}
-
+	/**
+	 * -------------------------------------------------------------CONSUMABLES SECTION
+	 */
+	@ConfigItem(
+		keyName = "cureVenomPoison",
+		name = "Cure Venom/Poison",
+		description = "Do you want to auto cure Venom or Poison",
+		section = consumables,
+		position = 0
+	)
+	default boolean cureVenomPoison()
+	{
+		return true;
+	}
+	@ConfigItem(
+		keyName = "poisonCheckPrayer",
+		name = "Use Sanfew Potion",
+		description = "When Poisoned and need prayer, this will Prioritise",
+		section = consumables,
+		position = 1,
+		hidden = true,
+		unhide = "cureVenomPoison"
+	)
+	default boolean poisonCheckPrayer()
+	{
+		return true;
+	}
 	/**
 	 * -------------------------------------------------------------DEBUGGING SECTION
 	 */

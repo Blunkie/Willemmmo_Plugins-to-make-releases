@@ -1,9 +1,14 @@
 package net.runelite.client.plugins.autogodwars;
 
 
+import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.Prayer;
+import net.runelite.api.Skill;
+import net.runelite.api.mixins.Inject;
 
 public class AutoGodwarsEnum
 {
@@ -79,29 +84,72 @@ public class AutoGodwarsEnum
 		}
 	}
 
+	private int AnglerFish()
+	{
+		return 0;
+	}
+
 	enum Food
 	{
-		MANTA_RAY(ItemID.MANTA_RAY, "Manta ray"),
-		TUNA_POTATO(ItemID.TUNA_POTATO, "Tuna potato"),
-		DARK_CRAB(ItemID.DARK_CRAB, "Dark crab"),
-		ANGLERFISH(ItemID.ANGLERFISH, "Anglerfish"),
-		SEA_TURTLE(ItemID.SEA_TURTLE, "Sea turtle"),
-		MUSHROOM_POTATO(ItemID.MUSHROOM_POTATO, "Mushroom potato"),
-		SHARK(ItemID.SHARK, "shark"),
-		COOKED_KARAMBWAN(ItemID.COOKED_KARAMBWAN, "Cooked karambwan"),
-		PEACH(ItemID.PEACH, "Peach"),
-		MONK_FISH(ItemID.MONKFISH, "Monk fish"),
-		SUMMER_PIE(ItemID.SUMMER_PIE, "Summer pie"),
-		HALF_A_SUMMER_PIE(ItemID.HALF_A_SUMMER_PIE, "Half a summer pie");
+
+		MANTA_RAY(ItemID.MANTA_RAY, "Manta ray", 22),
+		TUNA_POTATO(ItemID.TUNA_POTATO, "Tuna potato", 22),
+		DARK_CRAB(ItemID.DARK_CRAB, "Dark crab", 22),
+		ANGLERFISH(ItemID.ANGLERFISH, "Anglerfish", 22),
+		SEA_TURTLE(ItemID.SEA_TURTLE, "Sea turtle", 21),
+		MUSHROOM_POTATO(ItemID.MUSHROOM_POTATO, "Mushroom potato", 20),
+		SHARK(ItemID.SHARK, "Shark", 20),
+		CURRY(ItemID.CURRY, "Curry", 19),
+		UGTHANKI_KEBAB(ItemID.UGTHANKI_KEBAB, "Ugthanki kebab", 19),
+		COOKED_KARAMBWAN(ItemID.COOKED_KARAMBWAN, "Cooked karambwan", 18),
+		PEACH(ItemID.PEACH, "Peach", 8),
+		MONK_FISH(ItemID.MONKFISH, "Monk fish", 16),
+		SUMMER_PIE(ItemID.SUMMER_PIE, "Summer pie", 11),
+		HALF_A_SUMMER_PIE(ItemID.HALF_A_SUMMER_PIE, "Half a summer pie", 11),
+		PINEAPPLE_PIZZA(ItemID.PINEAPPLE_PIZZA, "1/2 pineapple pizza", 11),
+		_12_PINEAPPLE_PIZZA(ItemID._12_PINEAPPLE_PIZZA, "Pineapple pizza", 11),
+		ANCHOVY_PIZZA(ItemID.ANCHOVY_PIZZA, "Anchovy pizza", 9),
+		_12_ANCHOVY_PIZZA(ItemID._12_ANCHOVY_PIZZA, "1/2 anchovy pizza", 9);
 		@Getter
 		private final int id;
 		@Getter
 		private final String name;
+		@Getter
+		private final double heals;
+		@Inject
+		private Client client;
 
-		Food(int id, String name)
+
+		Food(int id, String name, double heals)
 		{
 			this.id = id;
 			this.name = name;
+			if (id == ItemID.ANGLERFISH)
+			{
+				int lvlHitpoints = client.getRealSkillLevel(Skill.HITPOINTS);
+				int modifier = 13;
+				if (lvlHitpoints >= 10 && lvlHitpoints <= 24)
+				{
+					modifier = 2;
+				}
+				if (lvlHitpoints >= 25 && lvlHitpoints <= 49)
+				{
+					modifier = 4;
+				}
+				if (lvlHitpoints >= 25 && lvlHitpoints <= 49)
+				{
+					modifier = 6;
+				}
+				if (lvlHitpoints >= 25 && lvlHitpoints <= 49)
+				{
+					modifier = 8;
+				}
+				this.heals = (lvlHitpoints * 0.1) + modifier;
+			}
+			else
+			{
+				this.heals = heals;
+			}
 		}
 	}
 
@@ -112,11 +160,11 @@ public class AutoGodwarsEnum
 
 		@Getter
 		private final int dose1, dose2, dose3, dose4;
-		@Getter
-		private final int[] ids;
+		//@Getter
+		private int[] ids;
 
 
-		Brew(int dose1, int dose2, int dose3, int dose4, int... ids)
+		Brew(int dose4, int dose3, int dose2, int dose1, int... ids)
 		{
 			this.dose1 = dose1;
 			this.dose2 = dose2;
@@ -124,19 +172,25 @@ public class AutoGodwarsEnum
 			this.dose4 = dose4;
 			this.ids = ids;
 		}
+
+		public int[] getIds()
+		{
+			ids = new int[]{dose1, dose2, dose3, dose4};
+			return ids;
+		}
 	}
 
+	@Getter
 	enum RestorePrayer
 	{
-		PRAYER_POTION(ItemID.PRAYER_POTION1, ItemID.PRAYER_POTION2, ItemID.PRAYER_POTION3, ItemID.PRAYER_POTION4, ItemID.PRAYER_POTION4, ItemID.PRAYER_POTION3, ItemID.PRAYER_POTION2, ItemID.PRAYER_POTION1),
-		SUPER_RESTORE(ItemID.SUPER_RESTORE1, ItemID.SUPER_RESTORE2, ItemID.SUPER_RESTORE3, ItemID.SUPER_RESTORE4, ItemID.SUPER_RESTORE4, ItemID.SUPER_RESTORE3, ItemID.SUPER_RESTORE2, ItemID.SUPER_RESTORE1),
+		PRAYER_POTION(ItemID.PRAYER_POTION1, ItemID.PRAYER_POTION2, ItemID.PRAYER_POTION3, ItemID.PRAYER_POTION4),
+		SUPER_RESTORE(ItemID.SUPER_RESTORE1, ItemID.SUPER_RESTORE2, ItemID.SUPER_RESTORE3, ItemID.SUPER_RESTORE4),
 		SANFEW_SERUM(ItemID.SANFEW_SERUM1, ItemID.SANFEW_SERUM2, ItemID.SANFEW_SERUM3, ItemID.SANFEW_SERUM4);
 
 		@Getter
 		private final int dose1, dose2, dose3, dose4;
 
-		@Getter
-		private final int[] ids;
+		private int[] ids;
 
 		RestorePrayer(int dose1, int dose2, int dose3, int dose4, int... ids)
 		{
@@ -145,6 +199,12 @@ public class AutoGodwarsEnum
 			this.dose3 = dose3;
 			this.dose4 = dose4;
 			this.ids = ids;
+		}
+
+		public int[] getIds()
+		{
+			ids = new int[]{dose1, dose2, dose3, dose4};
+			return ids;
 		}
 	}
 
@@ -160,8 +220,7 @@ public class AutoGodwarsEnum
 		@Getter
 		private final int dose1, dose2, dose3, dose4;
 
-		@Getter
-		private final int[] ids;
+		private int[] ids;
 
 		Antivenom(int dose1, int dose2, int dose3, int dose4, int... ids)
 		{
@@ -170,6 +229,46 @@ public class AutoGodwarsEnum
 			this.dose3 = dose3;
 			this.dose4 = dose4;
 			this.ids = ids;
+		}
+
+		public int[] getIds()
+		{
+			ids = new int[]{dose1, dose2, dose3, dose4};
+			return ids;
+		}
+	}
+
+	@RequiredArgsConstructor
+	@Getter
+	public enum Stamina
+	{
+		STAMINA_1(ItemID.STAMINA_POTION1, 20),
+		STAMINA_2(ItemID.STAMINA_POTION2, 20),
+		STAMINA_3(ItemID.STAMINA_POTION3, 20),
+		STAMINA_4(ItemID.STAMINA_POTION4, 20),
+		STAMINA_MIX_1(ItemID.STAMINA_MIX1, 20),
+		STAMINA_MIX_2(ItemID.STAMINA_MIX2, 99),
+		PURPLE_SWEETS(ItemID.PURPLE_SWEETS_10476, 10);
+
+		private static final ImmutableMap<Integer, Stamina> idmap;
+
+		static
+		{
+			ImmutableMap.Builder<Integer, Stamina> builder = ImmutableMap.builder();
+
+			for (Stamina stamina : values())
+			{
+				builder.put(stamina.itemID, stamina);
+			}
+			idmap = builder.build();
+		}
+
+		private final int itemID;
+		private final int runEnergy;
+
+		public static Stamina of(int itemID)
+		{
+			return idmap.get(itemID);
 		}
 	}
 }
