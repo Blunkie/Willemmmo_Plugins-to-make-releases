@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
@@ -51,7 +52,9 @@ import net.runelite.api.Point;
 import net.runelite.api.Prayer;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
+import net.runelite.api.World;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameStateChanged;
@@ -60,8 +63,10 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.WorldService;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
@@ -79,6 +84,8 @@ import net.runelite.client.plugins.iutils.MouseUtils;
 import net.runelite.client.plugins.iutils.PrayerUtils;
 import net.runelite.client.plugins.iutils.game.Game;
 import net.runelite.client.plugins.iutils.iUtils;
+import net.runelite.client.util.WorldUtil;
+import net.runelite.http.api.worlds.WorldResult;
 import org.pf4j.Extension;
 
 @Extension
@@ -132,6 +139,8 @@ public class AutoGodwarsPlugin extends Plugin
 	private getStates getStates;
 	@Inject
 	private KeyManager keyManager;
+	@Inject
+	private WorldService worldService;
 	@Getter(AccessLevel.PACKAGE)
 	private final Set<NPCContainer> npcContainers = new HashSet<>();
 	@Getter(AccessLevel.PACKAGE)
@@ -156,6 +165,9 @@ public class AutoGodwarsPlugin extends Plugin
 	private ActionQueue action;
 	@Inject
 	private InventoryUtils inventoryUtils;
+
+	private net.runelite.api.World hopTargetWorld;
+	private int pluginTimeOut;
 
 	@Provides
 	AutoGodwarsConfig getConfig(ConfigManager configManager)
@@ -292,14 +304,119 @@ public class AutoGodwarsPlugin extends Plugin
 	}
 
 	@Subscribe
+	private void onChatMessage(ChatMessage event)
+	{
+		if (event == null)
+		{
+			return;
+		}
+		if (event.getName().toLowerCase().equalsIgnoreCase(config.nameToEnableWorldHop()) && event.getType() == ChatMessageType.FRIENDSCHAT)
+		{
+			String message = event.getMessage();
+			String worldToSwitch = "";
+			WorldResult worldResult = worldService.getWorlds();
+			if (event.getMessage().toLowerCase().contains("hop w"))
+			{
+				if (message.indexOf("hop w") == -1)
+				{
+					worldToSwitch = message.substring(5, 8);
+				}
+				if (message.indexOf("hop w") > -1)
+				{
+					worldToSwitch = message.substring(message.indexOf("hop w") + 5, message.indexOf("hop w") + 8);
+				}
+				if (worldToSwitch != "" && worldToSwitch.length() == 3)
+				{
+					int worldToSwitchTo = Integer.parseInt(worldToSwitch);
+					if (worldResult.findWorld(worldToSwitchTo) != null)
+					{
+						HopWorlds(worldToSwitchTo);
+					}
+					if (worldResult.findWorld(worldToSwitchTo) == null)
+					{
+						log.info("World does not exist");
+					}
+				}
+			}
+		}
+		if (event.getMessage().equals("Please finish what you're doing before using the World Switcher."))
+		{
+			log.info("Still in Combat");
+		}
+		if (event.getMessage().equals("You're already on that world."))
+		{
+			log.info("Already there");
+			hopTargetWorld = null;
+		}
+	}
+
+	private void HopWorlds(int worldToSwitchTo)
+	{
+		assert client.isClientThread();
+		WorldResult worldResult = worldService.getWorlds();
+		net.runelite.http.api.worlds.World world = worldResult.findWorld(worldToSwitchTo);
+		if (world == null)
+		{
+			return;
+		}
+		final World rsWorld = client.createWorld();
+		rsWorld.setActivity(world.getActivity());
+		rsWorld.setAddress(world.getAddress());
+		rsWorld.setId(world.getId());
+		rsWorld.setPlayerCount(world.getPlayers());
+		rsWorld.setLocation(world.getLocation());
+		rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
+		if (client.getGameState() == GameState.LOGIN_SCREEN)
+		{
+			// on the login screen we can just change the world by ourselves
+			client.changeWorld(rsWorld);
+			return;
+		}
+		if (worldToSwitchTo != client.getWorld())
+		{
+			hopTargetWorld = rsWorld;
+		}
+		else
+		{
+			hopTargetWorld = null;
+		}
+	}
+
+	@Subscribe
 	public void onGameTick(GameTick event)
 	{
 		if (event == null)
 		{
 			log.info("TickEvent is Empty");
 		}
-		log.info("Size : " + staminaContainer.size());
 		lastTickTime = System.currentTimeMillis();
+		if (hopTargetWorld != null && npcContainers.isEmpty())
+		{
+			int currentWorldId = client.getWorld();
+			if (hopTargetWorld.getId() == currentWorldId)
+			{
+				hopTargetWorld = null;
+				return;
+			}
+			if (client.getWidget(WidgetInfo.WORLD_SWITCHER_LIST) == null)
+			{
+				client.openWorldHopper();
+			}
+			if (currentWorldId == client.getWorld() && pluginTimeOut == 0)
+			{
+				client.hopToWorld(hopTargetWorld);
+				pluginTimeOut = 2;
+			}
+			if (currentWorldId == client.getWorld() && pluginTimeOut > 0)
+			{
+				pluginTimeOut--;
+			}
+			else if (currentWorldId == client.getWorld())
+			{
+				hopTargetWorld = null;
+			}
+
+		}
 		if (config.debug())
 		{
 			doDebugFunction();
@@ -349,6 +466,10 @@ public class AutoGodwarsPlugin extends Plugin
 		if (stamina == null)
 		{
 			log.info("notfound stamina");
+		}
+		if (npcContainers.isEmpty() && !validRegion)
+		{
+
 		}
 		if (npcContainers.isEmpty() && validRegion)
 		{

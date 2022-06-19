@@ -115,9 +115,18 @@ public interface AutoGodwarsConfig extends Config
 		closedByDefault = true
 	)
 	String magic = "Magic";
+
+	@ConfigSection(
+		keyName = "misc",
+		position = 11,
+		name = "Misc Settings",
+		description = "",
+		closedByDefault = true
+	)
+	String misc = "Misc Settings";
 	@ConfigSection(
 		keyName = "debug",
-		position = 11,
+		position = 12,
 		name = "Debugging",
 		description = "",
 		closedByDefault = true
@@ -623,6 +632,36 @@ public interface AutoGodwarsConfig extends Config
 	{
 		return true;
 	}
+
+	/**
+	 * -------------------------------------------------------------MISC SECTION
+	 */
+	@ConfigItem(
+		keyName = "allowWorldHop",
+		name = "Allow Worldhop",
+		description = "Enable world hopping",
+		position = 0,
+		section = misc
+	)
+	default boolean allowWorldHop()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "nameToEnableWorldHop",
+		name = "Name to WorldHop after",
+		description = "Fill in the name that makes you hop worlds",
+		section = misc,
+		position = 1,
+		hidden = true,
+		unhide = "allowWorldHop"
+	)
+	default String nameToEnableWorldHop()
+	{
+		return "Fill in the Name";
+	}
+
 	/**
 	 * -------------------------------------------------------------DEBUGGING SECTION
 	 */
