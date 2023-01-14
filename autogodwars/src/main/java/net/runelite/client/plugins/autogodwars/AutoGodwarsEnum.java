@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import net.runelite.api.Client;
 import net.runelite.api.ItemID;
 import net.runelite.api.Prayer;
-import net.runelite.api.Skill;
 import net.runelite.api.mixins.Inject;
 
 public class AutoGodwarsEnum
@@ -84,14 +83,10 @@ public class AutoGodwarsEnum
 		}
 	}
 
-	private int AnglerFish()
-	{
-		return 0;
-	}
-
+	@Getter
+	@RequiredArgsConstructor
 	enum Food
 	{
-
 		MANTA_RAY(ItemID.MANTA_RAY, "Manta ray", 22),
 		TUNA_POTATO(ItemID.TUNA_POTATO, "Tuna potato", 22),
 		DARK_CRAB(ItemID.DARK_CRAB, "Dark crab", 22),
@@ -110,8 +105,20 @@ public class AutoGodwarsEnum
 		_12_PINEAPPLE_PIZZA(ItemID._12_PINEAPPLE_PIZZA, "Pineapple pizza", 11),
 		ANCHOVY_PIZZA(ItemID.ANCHOVY_PIZZA, "Anchovy pizza", 9),
 		_12_ANCHOVY_PIZZA(ItemID._12_ANCHOVY_PIZZA, "1/2 anchovy pizza", 9);
-		@Getter
-		private final int id;
+
+		private static final ImmutableMap<Integer, Food> foodMap;
+		private int[] ids;
+		static
+		{
+			ImmutableMap.Builder<Integer, Food> builder = ImmutableMap.builder();
+			for (Food food : values())
+			{
+				builder.put(food.itemID, food);
+			}
+			foodMap = builder.build();
+		}
+
+		private final int itemID;
 		@Getter
 		private final String name;
 		@Getter
@@ -119,12 +126,19 @@ public class AutoGodwarsEnum
 		@Inject
 		private Client client;
 
-
-		Food(int id, String name, double heals)
+		public static Food of(int itemID)
 		{
-			this.id = id;
-			this.name = name;
-			if (id == ItemID.ANGLERFISH)
+			return foodMap.get(itemID);
+		}
+
+		public static int[] getIDs(int itemID)
+		{
+			return foodMap.get(itemID).ids;
+		}
+
+
+
+			/*if (id == ItemID.ANGLERFISH)
 			{
 				int lvlHitpoints = client.getRealSkillLevel(Skill.HITPOINTS);
 				int modifier = 13;
@@ -149,8 +163,7 @@ public class AutoGodwarsEnum
 			else
 			{
 				this.heals = heals;
-			}
-		}
+			}*/
 	}
 
 	enum Brew
@@ -251,7 +264,6 @@ public class AutoGodwarsEnum
 		PURPLE_SWEETS(ItemID.PURPLE_SWEETS_10476, 10);
 
 		private static final ImmutableMap<Integer, Stamina> idmap;
-
 		static
 		{
 			ImmutableMap.Builder<Integer, Stamina> builder = ImmutableMap.builder();
@@ -269,6 +281,36 @@ public class AutoGodwarsEnum
 		public static Stamina of(int itemID)
 		{
 			return idmap.get(itemID);
+		}
+	}
+
+	@RequiredArgsConstructor
+	@Getter
+	public enum Regions
+	{
+		ARMA_REGION(11346, "ARMA_REGION"),
+		GENERAL_REGION(11347, "GENERAL_REGION"),
+		SARA_REGION(11602, "SARA_REGION"),
+		ZAMMY_REGION(11603, "ZAMMY_REGION");
+
+		private static final ImmutableMap<Integer, Regions> regionMap;
+
+		static
+		{
+			ImmutableMap.Builder<Integer, Regions> builder = ImmutableMap.builder();
+			for (Regions regions : values())
+			{
+				builder.put(regions.regionID, regions);
+			}
+			regionMap = builder.build();
+		}
+
+		private final int regionID;
+		private final String regionName;
+
+		public static Regions of(int regionID)
+		{
+			return regionMap.get(regionID);
 		}
 	}
 }

@@ -41,7 +41,6 @@ import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.NpcID;
 import net.runelite.api.Prayer;
-import static net.runelite.client.plugins.autogodwars.AutoGodwarsPlugin.*;
 @Getter(AccessLevel.PACKAGE)
 class NPCContainer
 {
@@ -60,6 +59,29 @@ class NPCContainer
 	private Actor npcInteracting;
 	@Setter(AccessLevel.PACKAGE)
 	private AttackStyle attackStyle;
+	public static final int MINION_AUTO1 = 6154;
+	public static final int MINION_AUTO2 = 6156;
+	public static final int MINION_AUTO3 = 7071;
+	public static final int MINION_AUTO4 = 7073;
+	public static final int GENERAL_AUTO1 = 7018;
+	public static final int GENERAL_AUTO2 = 7020;
+	public static final int GENERAL_AUTO3 = 7021;
+	public static final int ZAMMY_GENERIC_AUTO = 64;
+	public static final int KRIL_AUTO = 6948;
+	public static final int KRIL_SPEC = 6950;
+	public static final int ZAKL_AUTO = 7077;
+	public static final int BALFRUG_AUTO = 4630;
+	public static final int ZILYANA_MELEE_AUTO = 6964;
+	public static final int ZILYANA_AUTO = 6967;
+	public static final int ZILYANA_SPEC = 6970;
+	public static final int STARLIGHT_AUTO = 6376;
+	public static final int BREE_AUTO = 7026;
+	public static final int GROWLER_AUTO = 7037;
+	public static final int KREE_RANGED = 6978;
+	public static final int SKREE_AUTO = 6955;
+	public static final int GEERIN_AUTO = 6956;
+	public static final int GEERIN_FLINCH = 6958;
+	public static final int KILISA_AUTO = 6957;
 
 	NPCContainer(final NPC npc)
 	{

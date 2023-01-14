@@ -26,7 +26,6 @@
 package net.runelite.client.plugins.autogodwars;
 
 import com.google.inject.Provides;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -35,7 +34,6 @@ import javax.inject.Inject;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
@@ -48,11 +46,9 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
 import net.runelite.api.Player;
-import net.runelite.api.Point;
 import net.runelite.api.Prayer;
 import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
-import net.runelite.api.World;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameObjectDespawned;
@@ -62,11 +58,8 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
-import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.game.WorldService;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
@@ -74,18 +67,20 @@ import net.runelite.client.plugins.PluginDescriptor;
 import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.PRAYER_POTION;
 import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.SANFEW_SERUM;
 import static net.runelite.client.plugins.autogodwars.AutoGodwarsEnum.RestorePrayer.SUPER_RESTORE;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.ARMA_REGION;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.Armadyl_Altar;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.Bandos_Altar;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.GENERAL_REGION;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.SARA_REGION;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.Saradomin_Altar;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.ZAMMY_REGION;
+import static net.runelite.client.plugins.autogodwars.AutoGodwarsVariable.Zamorak_Altar;
 import static net.runelite.client.plugins.autogodwars.NPCContainer.BossMonsters.GENERAL_GRAARDOR;
 import static net.runelite.client.plugins.autogodwars.NPCContainer.BossMonsters.KRIL_TSUTSAROTH;
-import net.runelite.client.plugins.iutils.ActionQueue;
 import net.runelite.client.plugins.iutils.InventoryUtils;
-import net.runelite.client.plugins.iutils.LegacyMenuEntry;
-import net.runelite.client.plugins.iutils.MenuUtils;
-import net.runelite.client.plugins.iutils.MouseUtils;
 import net.runelite.client.plugins.iutils.PrayerUtils;
 import net.runelite.client.plugins.iutils.game.Game;
 import net.runelite.client.plugins.iutils.iUtils;
-import net.runelite.client.util.WorldUtil;
-import net.runelite.http.api.worlds.WorldResult;
 import org.pf4j.Extension;
 
 @Extension
@@ -98,37 +93,6 @@ import org.pf4j.Extension;
 )
 public class AutoGodwarsPlugin extends Plugin
 {
-	private static final int GENERAL_REGION = 11347;
-	private static final int ARMA_REGION = 11346;
-	private static final int SARA_REGION = 11602;
-	private static final int ZAMMY_REGION = 11603;
-	public static final int MINION_AUTO1 = 6154;
-	public static final int MINION_AUTO2 = 6156;
-	public static final int MINION_AUTO3 = 7071;
-	public static final int MINION_AUTO4 = 7073;
-	public static final int GENERAL_AUTO1 = 7018;
-	public static final int GENERAL_AUTO2 = 7020;
-	public static final int GENERAL_AUTO3 = 7021;
-	public static final int ZAMMY_GENERIC_AUTO = 64;
-	public static final int KRIL_AUTO = 6948;
-	public static final int KRIL_SPEC = 6950;
-	public static final int ZAKL_AUTO = 7077;
-	public static final int BALFRUG_AUTO = 4630;
-	public static final int ZILYANA_MELEE_AUTO = 6964;
-	public static final int ZILYANA_AUTO = 6967;
-	public static final int ZILYANA_SPEC = 6970;
-	public static final int STARLIGHT_AUTO = 6376;
-	public static final int BREE_AUTO = 7026;
-	public static final int GROWLER_AUTO = 7037;
-	public static final int KREE_RANGED = 6978;
-	public static final int SKREE_AUTO = 6955;
-	public static final int GEERIN_AUTO = 6956;
-	public static final int GEERIN_FLINCH = 6958;
-	public static final int KILISA_AUTO = 6957;
-	public static final int Armadyl_Altar = 26365;
-	public static final int Bandos_Altar = 26366;
-	public static final int Saradomin_Altar = 26364;
-	public static final int Zamorak_Altar = 26363;
 	@Inject
 	private Client client;
 	@Inject
@@ -136,11 +100,11 @@ public class AutoGodwarsPlugin extends Plugin
 	@Inject
 	private AutoGodwarsHotkeyListener hotkeyListener;
 	@Inject
+	private AutoGodwarsFunction autoGodwarsFunction;
+	@Inject
 	private getStates getStates;
 	@Inject
 	private KeyManager keyManager;
-	@Inject
-	private WorldService worldService;
 	@Getter(AccessLevel.PACKAGE)
 	private final Set<NPCContainer> npcContainers = new HashSet<>();
 	@Getter(AccessLevel.PACKAGE)
@@ -158,16 +122,8 @@ public class AutoGodwarsPlugin extends Plugin
 	@Inject
 	private PrayerUtils prayerUtils;
 	@Inject
-	private MouseUtils mouse;
-	@Inject
-	private MenuUtils menu;
-	@Inject
-	private ActionQueue action;
-	@Inject
 	private InventoryUtils inventoryUtils;
 
-	private net.runelite.api.World hopTargetWorld;
-	private int pluginTimeOut;
 
 	@Provides
 	AutoGodwarsConfig getConfig(ConfigManager configManager)
@@ -183,7 +139,8 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			return;
 		}
-		if (regionCheck())
+		autoGodwarsFunction.regionCheck();
+		if (autoGodwarsFunction.regionCheck())
 		{
 			npcContainers.clear();
 			for (NPC npc : client.getNpcs())
@@ -192,7 +149,7 @@ public class AutoGodwarsPlugin extends Plugin
 			}
 			validRegion = true;
 		}
-		else if (!regionCheck())
+		else if (!autoGodwarsFunction.regionCheck())
 		{
 			validRegion = false;
 			npcContainers.clear();
@@ -217,7 +174,7 @@ public class AutoGodwarsPlugin extends Plugin
 			return;
 		}
 		staminaContainer.clear();
-		if (regionCheck())
+		if (autoGodwarsFunction.regionCheck())
 		{
 			npcContainers.clear();
 			for (NPC npc : client.getNpcs())
@@ -226,7 +183,7 @@ public class AutoGodwarsPlugin extends Plugin
 			}
 			validRegion = true;
 		}
-		else if (!regionCheck())
+		else if (!autoGodwarsFunction.regionCheck())
 		{
 			validRegion = false;
 			npcContainers.clear();
@@ -310,77 +267,9 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			return;
 		}
-		if (event.getName().toLowerCase().equalsIgnoreCase(config.nameToEnableWorldHop()) && event.getType() == ChatMessageType.FRIENDSCHAT)
-		{
-			String message = event.getMessage();
-			String worldToSwitch = "";
-			WorldResult worldResult = worldService.getWorlds();
-			if (event.getMessage().toLowerCase().contains("hop w"))
-			{
-				if (message.indexOf("hop w") == -1)
-				{
-					worldToSwitch = message.substring(5, 8);
-				}
-				if (message.indexOf("hop w") > -1)
-				{
-					worldToSwitch = message.substring(message.indexOf("hop w") + 5, message.indexOf("hop w") + 8);
-				}
-				if (worldToSwitch != "" && worldToSwitch.length() == 3)
-				{
-					int worldToSwitchTo = Integer.parseInt(worldToSwitch);
-					if (worldResult.findWorld(worldToSwitchTo) != null)
-					{
-						HopWorlds(worldToSwitchTo);
-					}
-					if (worldResult.findWorld(worldToSwitchTo) == null)
-					{
-						log.info("World does not exist");
-					}
-				}
-			}
-		}
-		if (event.getMessage().equals("Please finish what you're doing before using the World Switcher."))
-		{
-			log.info("Still in Combat");
-		}
-		if (event.getMessage().equals("You're already on that world."))
-		{
-			log.info("Already there");
-			hopTargetWorld = null;
-		}
+		autoGodwarsFunction.handleChatEvent(event);
 	}
 
-	private void HopWorlds(int worldToSwitchTo)
-	{
-		assert client.isClientThread();
-		WorldResult worldResult = worldService.getWorlds();
-		net.runelite.http.api.worlds.World world = worldResult.findWorld(worldToSwitchTo);
-		if (world == null)
-		{
-			return;
-		}
-		final World rsWorld = client.createWorld();
-		rsWorld.setActivity(world.getActivity());
-		rsWorld.setAddress(world.getAddress());
-		rsWorld.setId(world.getId());
-		rsWorld.setPlayerCount(world.getPlayers());
-		rsWorld.setLocation(world.getLocation());
-		rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
-		if (client.getGameState() == GameState.LOGIN_SCREEN)
-		{
-			// on the login screen we can just change the world by ourselves
-			client.changeWorld(rsWorld);
-			return;
-		}
-		if (worldToSwitchTo != client.getWorld())
-		{
-			hopTargetWorld = rsWorld;
-		}
-		else
-		{
-			hopTargetWorld = null;
-		}
-	}
 
 	@Subscribe
 	public void onGameTick(GameTick event)
@@ -390,32 +279,9 @@ public class AutoGodwarsPlugin extends Plugin
 			log.info("TickEvent is Empty");
 		}
 		lastTickTime = System.currentTimeMillis();
-		if (hopTargetWorld != null && npcContainers.isEmpty())
+		if (config.allowWorldHop() && npcContainers.isEmpty())
 		{
-			int currentWorldId = client.getWorld();
-			if (hopTargetWorld.getId() == currentWorldId)
-			{
-				hopTargetWorld = null;
-				return;
-			}
-			if (client.getWidget(WidgetInfo.WORLD_SWITCHER_LIST) == null)
-			{
-				client.openWorldHopper();
-			}
-			if (currentWorldId == client.getWorld() && pluginTimeOut == 0)
-			{
-				client.hopToWorld(hopTargetWorld);
-				pluginTimeOut = 2;
-			}
-			if (currentWorldId == client.getWorld() && pluginTimeOut > 0)
-			{
-				pluginTimeOut--;
-			}
-			else if (currentWorldId == client.getWorld())
-			{
-				hopTargetWorld = null;
-			}
-
+			autoGodwarsFunction.checkForWorldHop();
 		}
 		if (config.debug())
 		{
@@ -467,10 +333,6 @@ public class AutoGodwarsPlugin extends Plugin
 		{
 			log.info("notfound stamina");
 		}
-		if (npcContainers.isEmpty() && !validRegion)
-		{
-
-		}
 		if (npcContainers.isEmpty() && validRegion)
 		{
 			log.info("No monster found... to execute this function walk to any godwars region");
@@ -518,8 +380,9 @@ public class AutoGodwarsPlugin extends Plugin
 				}
 			}
 		}
-		if (config.enableAutoEat() && inventoryUtils.containsItem(ItemID.COOKED_KARAMBWAN))
+		if (config.enableAutoEat())
 		{
+			handleEatFood();
 			if (inventoryUtils.containsItem(ItemID.COOKED_KARAMBWAN))
 			{
 				checkPlayerState();
@@ -550,12 +413,14 @@ public class AutoGodwarsPlugin extends Plugin
 				{
 					inventoryUtils.interactWithItem(ItemID.COOKED_KARAMBWAN, game.sleepDelay(), "Eat");
 				}
+				handleEatFood();
 				break;
 			case DRINK_PRAYER:
 				if (config.debug())
 				{
 					handleDrinkPrayer();
 				}
+				handleDrinkPrayer();
 				break;
 			case FUNCTION_FOUND:
 				break;
@@ -565,6 +430,15 @@ public class AutoGodwarsPlugin extends Plugin
 			case POISON:
 				HandlePoison();
 				break;
+		}
+	}
+
+	private void handleEatFood()
+	{
+		for (AutoGodwarsEnum.Food food : AutoGodwarsEnum.Food.values())
+		{
+			int[] list = AutoGodwarsEnum.Food.getIDs(food.getItemID()).clone();
+			log.info(String.valueOf(list));
 		}
 	}
 
@@ -614,6 +488,7 @@ public class AutoGodwarsPlugin extends Plugin
 		return false;
 	}
 
+
 	private void handleDrinkPrayer()
 	{
 		for (AutoGodwarsEnum.RestorePrayer restorePrayer : AutoGodwarsEnum.RestorePrayer.values())
@@ -636,7 +511,6 @@ public class AutoGodwarsPlugin extends Plugin
 				}
 				if (client.getBoostedSkillLevel(Skill.PRAYER) < client.getRealSkillLevel(Skill.PRAYER) - Math.floor(statRestore) && statRestore > 0)
 				{
-					log.info("Entering this function");
 					for (int doseID : restorePrayer.getIds())
 					{
 						if (inventoryUtils.containsItem(doseID))
@@ -752,14 +626,6 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 
 	}
-
-	private boolean regionCheck()
-	{
-		return Arrays.stream(client.getMapRegions()).anyMatch(
-			x -> x == ARMA_REGION || x == GENERAL_REGION || x == ZAMMY_REGION || x == SARA_REGION
-		);
-	}
-
 
 	private void addNpc(NPC npc)
 	{
@@ -894,28 +760,6 @@ public class AutoGodwarsPlugin extends Plugin
 		}
 	}
 
-	private void disableAllPrayer()
-	{
-		for (Prayer prayer : Prayer.values())
-		{
-			if (client.getVarbitValue(prayer.getVarbit()) == 1 && !prayer.name().equals(Prayer.PRESERVE.name()))
-			{
-				Widget widget = client.getWidget(prayer.getWidgetInfo());
-				if (widget != null)
-				{
-					Point p = mouse.getClickPoint(widget.getBounds());
-					LegacyMenuEntry toggle = new LegacyMenuEntry("", "", 1, MenuAction.CC_OP.getId(), -1, widget.getId(), false);
-					Runnable runnable = () ->
-					{
-						menu.setEntry(toggle);
-						mouse.handleMouseClick(p);
-					};
-					action.delayTime(game.sleepDelay(), runnable);
-				}
-			}
-		}
-	}
-
 	private void infoMessage(String Message)
 	{
 		if (!Objects.equals(Message, ""))
@@ -940,7 +784,7 @@ public class AutoGodwarsPlugin extends Plugin
 				setPrayerActive(Prayer.PROTECT_FROM_MAGIC);
 				break;
 			case DISABLE:
-				disableAllPrayer();
+				autoGodwarsFunction.disableAllPrayer();
 				break;
 		}
 	}
